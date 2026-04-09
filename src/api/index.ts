@@ -178,6 +178,11 @@ export const usersApi = {
     return { success: true, data: (data || []).map(adaptUser) };
   },
   async update(id: string | number, updateData: any) {
+    // Proteção: rejeitar IDs inválidos (ex: 0, vazio, não-UUID)
+    if (!id || id === 0 || id === '0' || id === '') {
+      return { success: false, error: 'ID de usuário inválido' };
+    }
+
     // Converte aliases PT → colunas reais EN
     const mapped: any = {};
     if (updateData.nome !== undefined) mapped.name = updateData.nome;
@@ -458,12 +463,14 @@ export const logsApi = {
   },
   async create(acao: string, descricao: string) {
     const userId = await getMyUserId();
-    const { error } = await supabase.from('audit_logs').insert({ 
-      user_id: userId,
+    const insertData: any = { 
       action: acao, 
       entity: descricao,
       metadata: { acao, descricao }
-    });
+    };
+    // Só inclui user_id se conseguiu resolver (evita erro de FK com null/inválido)
+    if (userId) insertData.user_id = userId;
+    const { error } = await supabase.from('audit_logs').insert(insertData);
     return apiResponse<void>(null, error);
   }
 };
