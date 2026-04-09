@@ -125,8 +125,9 @@ export function KmPage() {
 
     // Corrigir formato da data para ISO completo (YYYY-MM-DDTHH:mm:ss)
     function toIsoWithSeconds(dt: string) {
-      // dt: '2026-04-09T09:00' => '2026-04-09T09:00:00'
-      return dt.length === 16 ? dt + ':00' : dt;
+
+      // dt: '2026-04-09T09:00' => '2026-04-09'
+      return dt.split('T')[0];
     }
     const dataIso = toIsoWithSeconds(data);
 
