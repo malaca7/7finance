@@ -7,7 +7,7 @@
     "dev": "vite",
     "php-server": "php -S localhost:8000 -t .",
     "dev:all": "start npm run php-server && vite",
-    "build": "vite build",
+    "build": "vite build && node -e \"const fs=require('fs');if(fs.existsSync('docs'))fs.rmSync('docs',{recursive:true});fs.cpSync('dist','docs',{recursive:true});fs.writeFileSync('docs/.nojekyll','');fs.copyFileSync('dist/index.html','docs/404.html');\"",
     "preview": "vite preview"
   },
   "dependencies": {
