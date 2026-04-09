@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, DollarSign, Gauge, AlertTriangle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { Card, CardHeader, Select } from '../components/ui';
@@ -251,34 +252,34 @@ export function DashboardPage() {
         <Card>
           <CardHeader title="Ações Rápidas" subtitle="Acesse as principais funcionalidades" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <a
-              href="/ganhos"
+            <Link
+              to="/ganhos"
               className="flex flex-col items-center gap-2 p-4 bg-premium-gray/30 rounded-premium hover:bg-premium-gold/10 transition-colors group"
             >
               <TrendingUp className="w-8 h-8 text-premium-gold group-hover:text-premium-goldLight" />
               <span className="text-sm text-gray-300">Registrar Ganho</span>
-            </a>
-            <a
-              href="/despesas"
+            </Link>
+            <Link
+              to="/despesas"
               className="flex flex-col items-center gap-2 p-4 bg-premium-gray/30 rounded-premium hover:bg-red-500/10 transition-colors group"
             >
               <TrendingDown className="w-8 h-8 text-red-500 group-hover:text-red-400" />
               <span className="text-sm text-gray-300">Registrar Despesa</span>
-            </a>
-            <a
-              href="/km"
+            </Link>
+            <Link
+              to="/km"
               className="flex flex-col items-center gap-2 p-4 bg-premium-gray/30 rounded-premium hover:bg-blue-500/10 transition-colors group"
             >
               <Gauge className="w-8 h-8 text-blue-500 group-hover:text-blue-400" />
               <span className="text-sm text-gray-300">Registrar KM</span>
-            </a>
-            <a
-              href="/manutencao"
+            </Link>
+            <Link
+              to="/manutencao"
               className="flex flex-col items-center gap-2 p-4 bg-premium-gray/30 rounded-premium hover:bg-orange-500/10 transition-colors group"
             >
               <AlertTriangle className="w-8 h-8 text-orange-500 group-hover:text-orange-400" />
               <span className="text-sm text-gray-300">Manutenção</span>
-            </a>
+            </Link>
           </div>
         </Card>
       </div>
