@@ -95,11 +95,15 @@ export const useAppStore = create<AppState>()(
       dashboardSummary: null,
       
       // Auth Actions
-      login: (user, token) => {
+      login: async (user, token) => {
         set({ user, token, isAuthenticated: true });
+        localStorage.setItem('malaca_token', token);
+        localStorage.setItem('malaca_user', JSON.stringify(user));
       },
       
       logout: () => {
+        localStorage.removeItem('malaca_token');
+        localStorage.removeItem('malaca_user');
         set({
           user: null,
           token: null,

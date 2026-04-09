@@ -1,138 +1,284 @@
-import type { 
-  User, Earnings, Expense, KmRegistry, Maintenance, ApiResponse,
-  DashboardSummary, EarningsType, DateFilter,
-  DriverType, MaintenanceType, AdminDashboardData, AuditLog
+import { 
+  User, DateFilter, Earnings, Expense, Maintenance, KmRegistry, ApiResponse
 } from '../types';
+import { supabase } from './supabase';
 
-const API_BASE_URL = 'http://192.168.1.5:8000/api_backend/api.php?entity=';
-const AUTH_URL = 'http://192.168.1.5:8000/api_backend/auth.php?action=';
-
-async function authCall<T>(action: string, data: any): Promise<ApiResponse<T>> {
-  try {
-    const response = await fetch(`${AUTH_URL}${action}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    const result = await response.json();
-    if (!response.ok || result.success === false) {
-      return { success: false, error: result.error || 'Erro na requisi��o' };
-    }
-    return { success: true, data: result.data };
-  } catch (error) {
-    return { success: false, error: 'Erro de conex�o com o backend.' };
+const apiResponse = <T>(data: T | null, error: any): ApiResponse<T> => {
+  if (error) {
+    console.error('API Error:', error);
+    return { success: false, error: error.message || 'Erro desconhecido' };
   }
-}
-
-async function apiCall<T>(entity: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
-  try {
-    const storageStr = localStorage.getItem('malaca-finance-storage');
-    let userId = 1;
-
-    if (storageStr) {
-      try {
-        const storageData = JSON.parse(storageStr);
-        const user = storageData?.state?.user;
-        if (user && user.id) userId = user.id;
-      } catch (e) {
-        console.error("Erro ao ler userId do storage:", e);
-      }
-    }
-
-    const filter = JSON.parse(localStorage.getItem('malaca-finance-storage') || '{}')?.state?.dateFilter || 'mensal';
-    const token = JSON.parse(localStorage.getItem('malaca-finance-storage') || '{}')?.state?.token;
-
-    const url = `${API_BASE_URL}${entity}&userId=${userId}&filter=${filter}`;    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (options.headers) {
-      Object.entries(options.headers).forEach(([k, v]) => headers[k] = v as string);
-    }
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(url, { 
-      ...options, 
-      headers
-    });
-    
-    const data = await response.json();
-    if (!response.ok || data.success === false) return { success: false, error: data.error || 'Erro na requisi��o' };
-    return { success: true, data: data.data || data };
-  } catch (error) {
-    return { success: false, error: 'Certifique-se que o banco de dados est� online (XAMPP rodando).' };
-  }
-}
+  return { success: true, data: data as T };
+};
 
 export const authApi = {
-  async login(telefone: string, password: string) {
-    return authCall<{ user: User; token: string }>('login', { telefone, password });
+  async login(telefone: string, senha_hash: string): Promise<ApiResponse<{ user: User; token: string }>> {
+    try {
+      const email = `${telefone.replace(/\D/g, '')}@7finance.com`;
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password: senha_hash,
+      });
+
+      if (authError) return { success: false, error: authError.message };
+
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_id', authData.user.id)
+        .single();
+
+      if (userError) return { success: false, error: userError.message };
+
+      return {
+        success: true,
+        data: {
+          user: userData as User,
+          token: authData.session?.access_token || '',
+        },
+      };
+    } catch (err: any) {
+      console.error('Login exception:', err);
+      return { success: false, error: err.message || 'Erro no login' };
+    }
   },
-  async register(data: any) { 
-    return authCall<{ user: User; token: string }>('register', data); 
+
+  async register(userData: any): Promise<ApiResponse<{ user: User; token: string }>> {
+    try {
+      const phone = userData.telefone.replace(/\D/g, '');
+      const email = `${phone}@7finance.com`;
+      
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password: userData.senha_hash,
+      });
+
+      if (authError) return { success: false, error: authError.message };
+
+      const newUser = {
+        nome: userData.nome,
+        telefone: userData.telefone,
+        auth_id: authData.user?.id,
+        role: 'user',
+        status: 'ativo'
+      };
+
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .insert(newUser)
+        .select()
+        .single();
+
+      if (profileError) return { success: false, error: profileError.message };
+
+      return {
+        success: true,
+        data: {
+          user: profile as User,
+          token: authData.session?.access_token || '',
+        },
+      };
+    } catch (err: any) {
+      console.error('Register exception:', err);
+      return { success: false, error: err.message || 'Erro no registro' };
+    }
   },
-  async getMe() { 
-    return apiCall<User>('user'); 
+
+  async getMe() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { success: false, error: 'Não autenticado' };
+      
+      const { data: profile, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_id', user.id)
+        .single();
+        
+      return apiResponse<User>(profile, error);
+    } catch (err) {
+      return { success: false, error: 'Erro ao buscar perfil' };
+    }
   },
 };
 
 export const usersApi = {
-  async getAll() { return apiCall<User[]>('usuario'); },
-  async getById(id: number) { return apiCall<User>(`usuario&id=${id}`); },
-  async create(data: any) { return apiCall<User>('usuario', { method: 'POST', body: JSON.stringify(data) }); },
-  async update(id: number, data: any) { 
-    return apiCall<User>(id > 0 ? `usuario&id=${id}` : 'usuario', { method: 'POST', body: JSON.stringify(data) }); 
+  async getAll() { 
+    const { data, error } = await supabase.from('users').select('*');
+    return apiResponse<User[]>(data, error);
   },
-  async delete(id: number) { return apiCall<void>(`usuario&id=${id}`, { method: 'DELETE' }); },
-};
-
-export const earningsApi = {
-  async getAll(filter?: DateFilter) { return apiCall<Earnings[]>(`earnings${filter ? `&filter=${filter}` : ''}`); },
-  async create(data: any) { return apiCall<Earnings>('earnings', { method: 'POST', body: JSON.stringify(data) }); },
-  async update(id: number, data: any) { return apiCall<Earnings>(`earnings&id=${id}`, { method: 'POST', body: JSON.stringify(data) }); },
-  async delete(id: number) { return apiCall<void>(`earnings&id=${id}`, { method: 'DELETE' }); },
-};
-
-export const expensesApi = {
-  async getAll(filter?: DateFilter) { return apiCall<Expense[]>(`expenses${filter ? `&filter=${filter}` : ''}`); },
-  async create(data: any) { return apiCall<Expense>('expenses', { method: 'POST', body: JSON.stringify(data) }); },
-  async update(id: number, data: any) { return apiCall<Expense>(`expenses&id=${id}`, { method: 'POST', body: JSON.stringify(data) }); },
-  async delete(id: number) { return apiCall<void>(`expenses&id=${id}`, { method: 'DELETE' }); },
-};
-
-export const kmApi = {
-  async getAll() { return apiCall<KmRegistry[]>('km'); },
-  async create(data: any) { return apiCall<KmRegistry>('km', { method: 'POST', body: JSON.stringify(data) }); },
-  async update(id: number, data: any) { return apiCall<KmRegistry>(`km&id=${id}`, { method: 'POST', body: JSON.stringify(data) }); },
-  async delete(id: number) { return apiCall<void>(`km&id=${id}`, { method: 'DELETE' }); },
-};
-
-export const dashboardApi = {
-  async getSummary(filter?: DateFilter) { return apiCall<DashboardSummary>(`summary${filter ? `&filter=${filter}` : ''}`); },
-  async getAdminDashboardData() { return apiCall<AdminDashboardData>('admin_dashboard'); },
-};
-
-export const maintenanceApi = {
-  async getAll() { return apiCall<Maintenance[]>('maintenance'); },
-  async create(data: any) { return apiCall<Maintenance>('maintenance', { method: 'POST', body: JSON.stringify(data) }); },
-  async update(id: number, data: any) { return apiCall<Maintenance>(`maintenance&id=${id}`, { method: 'POST', body: JSON.stringify(data) }); },
-  async delete(id: number) { return apiCall<void>(`maintenance&id=${id}`, { method: 'DELETE' }); },
+  async update(id: string | number, data: any) { 
+    const { data: result, error } = await supabase.from('users').update(data).eq('id', id).select().single();
+    return apiResponse<User>(result, error);
+  },
 };
 
 export const veiculosApi = {
-  async getAll() { return apiCall<any[]>('veiculos'); },
-  async create(data: any) { return apiCall<any>('veiculos', { method: 'POST', body: JSON.stringify(data) }); },
-  async update(id: number, data: any) { return apiCall<any>(`veiculos&id=${id}`, { method: 'POST', body: JSON.stringify(data) }); },
-  async delete(id: number) { return apiCall<void>(`veiculos&id=${id}`, { method: 'DELETE' }); },
+  async getAll() { 
+    const { data, error } = await supabase.from('veiculos').select('*');
+    return apiResponse<any[]>(data, error);
+  },
+  async create(data: any) { 
+    const { data: result, error } = await supabase.from('veiculos').insert(data).select().single();
+    return apiResponse<any>(result, error);
+  },
+  async update(id: number, data: any) { 
+    const { data: result, error } = await supabase.from('veiculos').update(data).eq('id', id).select().single();
+    return apiResponse<any>(result, error);
+  },
+  async delete(id: number) { 
+    const { error } = await supabase.from('veiculos').delete().eq('id', id);
+    return apiResponse<void>(null, error);
+  },
 };
 
-export const logsApi = {
-  async getAll() { return apiCall<AuditLog[]>('logs'); },
-  async create(acao: string, descricao: string) { return apiCall<void>('logs', { method: 'POST', body: JSON.stringify({ acao, descricao }) }); },
+export const kmApi = {
+  async getAll() { 
+    const { data, error } = await supabase.from('km_registry').select('*').order('data', { ascending: false });
+    return apiResponse<KmRegistry[]>(data, error);
+  },
+  async create(data: any) { 
+    const { data: result, error } = await supabase.from('km_registry').insert(data).select().single();
+    return apiResponse<KmRegistry>(result, error);
+  },
+  async update(id: number, data: any) { 
+    const { data: result, error } = await supabase.from('km_registry').update(data).eq('id', id).select().single();
+    return apiResponse<KmRegistry>(result, error);
+  },
+  async delete(id: number) { 
+    const { error } = await supabase.from('km_registry').delete().eq('id', id);
+    return apiResponse<void>(null, error);
+  },
+};
+
+export const earningsApi = {
+  async getAll() { 
+    const { data, error } = await supabase.from('earnings').select('*').order('data', { ascending: false });
+    return apiResponse<Earnings[]>(data, error);
+  },
+  async create(data: any) { 
+    const { data: result, error } = await supabase.from('earnings').insert(data).select().single();
+    return apiResponse<Earnings>(result, error);
+  },
+  async update(id: number, data: any) { 
+    const { data: result, error } = await supabase.from('earnings').update(data).eq('id', id).select().single();
+    return apiResponse<Earnings>(result, error);
+  },
+  async delete(id: number) { 
+    const { error } = await supabase.from('earnings').delete().eq('id', id);
+    return apiResponse<void>(null, error);
+  },
+};
+
+export const expensesApi = {
+  async getAll() { 
+    const { data, error } = await supabase.from('expenses').select('*').order('data', { ascending: false });
+    return apiResponse<Expense[]>(data, error);
+  },
+  async create(data: any) { 
+    const { data: result, error } = await supabase.from('expenses').insert(data).select().single();
+    return apiResponse<Expense>(result, error);
+  },
+  async update(id: number, data: any) { 
+    const { data: result, error } = await supabase.from('expenses').update(data).eq('id', id).select().single();
+    return apiResponse<Expense>(result, error);
+  },
+  async delete(id: number) { 
+    const { error } = await supabase.from('expenses').delete().eq('id', id);
+    return apiResponse<void>(null, error);
+  },
+};
+
+export const maintenanceApi = {
+  async getAll() { 
+    const { data, error } = await supabase.from('maintenance').select('*').order('data', { ascending: false });
+    return apiResponse<Maintenance[]>(data, error);
+  },
+  async create(data: any) { 
+    const { data: result, error } = await supabase.from('maintenance').insert(data).select().single();
+    return apiResponse<Maintenance>(result, error);
+  },
+  async update(id: number, data: any) { 
+    const { data: result, error } = await supabase.from('maintenance').update(data).eq('id', id).select().single();
+    return apiResponse<Maintenance>(result, error);
+  },
+  async delete(id: number) { 
+    const { error } = await supabase.from('maintenance').delete().eq('id', id);
+    return apiResponse<void>(null, error);
+  },
+};
+
+export const dashboardApi = {
+  async getSummary(_filter?: DateFilter) {
+    try {
+      const { data: earnings, error: earningsError } = await supabase.from('earnings').select('valor, tipo');
+      const { data: expenses, error: expensesError } = await supabase.from('expenses').select('valor, tipo');
+      
+      if (earningsError) throw earningsError;
+      if (expensesError) throw expensesError;
+
+      const ganhosPorTipo: any = { corrida: 0, gorjeta: 0, dinheiro: 0 };
+      const despesasPorTipo: any = { abastecimento: 0, manutencao: 0, lavagem: 0, pedagio: 0, alimentacao: 0, aluguel: 0, parcela: 0 };
+
+      const totalEarnings = (earnings || []).reduce((acc: number, curr: any) => {
+        const val = Number(curr.valor) || 0;
+        if (curr.tipo && ganhosPorTipo[curr.tipo] !== undefined) ganhosPorTipo[curr.tipo] += val;
+        return acc + val;
+      }, 0);
+
+      const totalExpenses = (expenses || []).reduce((acc: number, curr: any) => {
+        const val = Number(curr.valor) || 0;
+        if (curr.tipo && despesasPorTipo[curr.tipo] !== undefined) despesasPorTipo[curr.tipo] += val;
+        return acc + val;
+      }, 0);
+      
+      return { 
+        success: true, 
+        data: { 
+          totalGanhos: totalEarnings, 
+          totalDespesas: totalExpenses, 
+          lucroLiquido: totalEarnings - totalExpenses,
+          kmRodados: 0,
+          ganhosPorTipo,
+          despesasPorTipo
+        } as any 
+      };
+    } catch (e: any) {
+      console.error('getSummary error:', e);
+      return { success: false, error: e.message || 'Erro ao calcular sumário' };
+    }
+  },
+  async getAdminDashboardData() {
+    try {
+      const { count: totalUsers } = await supabase.from('users').select('*', { count: 'exact', head: true });
+      const { data: earnings } = await supabase.from('earnings').select('valor');
+      
+      return {
+        success: true,
+        data: {
+          totalUsers: totalUsers || 0,
+          totalRevenue: (earnings || []).reduce((acc: number, curr: any) => acc + Number(curr.valor), 0)
+        } as any
+      };
+    } catch (e) {
+      return { success: false, error: 'Erro ao buscar dados admin' };
+    }
+  }
 };
 
 export const adminApi = {
-  async getDashboardData() { return apiCall<AdminDashboardData>('admin_dashboard'); },
+  async getDashboardData() {
+    return dashboardApi.getAdminDashboardData();
+  }
+};
+
+export const logsApi = {
+  async getAll() {
+    const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
+    return apiResponse<any[]>(data, error);
+  },
+  async create(acao: string, descricao: string) {
+    const { error } = await supabase.from('audit_logs').insert({ acao, descricao });
+    return apiResponse<void>(null, error);
+  }
 };

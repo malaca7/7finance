@@ -16,27 +16,44 @@ import { ProfilePage } from './pages/Profile';
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, login } = useAppStore();
+  const { isAuthenticated, login, user } = useAppStore();
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('malaca_token');
-      const userStr = localStorage.getItem('malaca_user');
+      if (isAuthenticated) return;
+
+      const legacyToken = localStorage.getItem('malaca_token');
+      const legacyUserStr = localStorage.getItem('malaca_user');
       
-      if (token && userStr) {
+      if (legacyToken && legacyUserStr) {
         try {
-          const user = JSON.parse(userStr);
-          login(user, token);
+          const legacyUser = JSON.parse(legacyUserStr);
+          login(legacyUser, legacyToken);
         } catch (error) {
           console.error('Error parsing user data:', error);
+          localStorage.removeItem('malaca_token');
+          localStorage.removeItem('malaca_user');
         }
       }
     };
 
     checkAuth();
-  }, [login]);
+  }, [isAuthenticated, login]);
 
-  if (!isAuthenticated && !localStorage.getItem('malaca_token')) {
+  const token = localStorage.getItem('malaca_token');
+  const storage = localStorage.getItem('malaca-finance-storage');
+  
+  let persistentIsAuthenticated = false;
+  if (storage) {
+    try {
+      const parsed = JSON.parse(storage);
+      persistentIsAuthenticated = parsed.state?.isAuthenticated;
+    } catch (e) {}
+  }
+
+  const hasAuth = isAuthenticated || !!token || persistentIsAuthenticated;
+
+  if (!hasAuth) {
     return <Navigate to="/login" replace />;
   }
 
@@ -73,6 +90,7 @@ function App() {
         }}
       />
       <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<LoginPage />} />
         
         <Route
@@ -138,7 +156,6 @@ function App() {
           }
         />
         
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
