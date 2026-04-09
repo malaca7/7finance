@@ -233,28 +233,30 @@ export function AdminPage() {
         </div>
 
         {/* Tabs Navigation */}
-        <div className="flex items-center gap-1 bg-premium-dark p-1 rounded-app w-fit border border-premium-gray/30">
-          {[
-            { id: 'overview', label: 'Geral', icon: Activity },
-            { id: 'users', label: 'Usuários', icon: Users },
-            { id: 'analytics', label: 'Financeiro', icon: DollarSign },
-            { id: 'logs', label: 'Auditoria', icon: History },
-            { id: 'alerts', label: 'Alertas', icon: Zap },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={clsx(
-                "flex items-center gap-2 px-4 py-2 rounded-app text-sm font-medium transition-all",
-                activeTab === tab.id 
-                  ? "bg-premium-gold text-premium-black shadow-glow" 
-                  : "text-gray-400 hover:text-white hover:bg-premium-gray/50"
-              )}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          ))}
+        <div className="overflow-x-auto -mx-4 px-4 scrollbar-hide">
+          <div className="flex items-center gap-1 bg-premium-dark p-1 rounded-app w-fit border border-premium-gray/30">
+            {[
+              { id: 'overview', label: 'Geral', icon: Activity },
+              { id: 'users', label: 'Usuários', icon: Users },
+              { id: 'analytics', label: 'Financeiro', icon: DollarSign },
+              { id: 'logs', label: 'Auditoria', icon: History },
+              { id: 'alerts', label: 'Alertas', icon: Zap },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={clsx(
+                  "flex items-center gap-1.5 px-3 py-2 rounded-app text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
+                  activeTab === tab.id 
+                    ? "bg-premium-gold text-premium-black shadow-glow" 
+                    : "text-gray-400 hover:text-white hover:bg-premium-gray/50"
+                )}
+              >
+                <tab.icon className="w-4 h-4" />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {activeTab === 'overview' && dashboardData && (
