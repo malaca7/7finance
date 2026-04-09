@@ -38,8 +38,10 @@ export function MaintenancePage() {
   const [valor, setValor] = useState('');
   const [obs, setObs] = useState('');
 
-  // Get current KM
-  const currentKm = kmRegistries.length > 0 ? kmRegistries[0].km_final : 0;
+  // Get current KM (km_final, or km_inicial if final not yet filled)
+  const currentKm = kmRegistries.length > 0 
+    ? (Number(kmRegistries[0].km_final) || Number(kmRegistries[0].km_inicial) || 0)
+    : 0;
 
   useEffect(() => {
     loadMaintenances();
