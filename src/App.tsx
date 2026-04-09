@@ -71,8 +71,10 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
+  
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <ScrollToTop />
       <Toaster 
         position="top-center"
