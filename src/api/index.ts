@@ -422,17 +422,45 @@ export const adminApi = {
       console.error('Admin dashboard error:', e);
       return { success: false, error: e.message || 'Erro ao buscar dados do painel admin' };
     }
-  }
+  },
+
+  // Criar usuário via RPC admin_create_user (cria auth + public.users)
+  async createUser(params: { name: string; email?: string; phone?: string; password?: string; role?: string }): Promise<ApiResponse<any>> {
+    try {
+      const { data, error } = await supabase.rpc('admin_create_user', {
+        p_name: params.name,
+        p_email: params.email || null,
+        p_phone: params.phone || null,
+        p_password: params.password || '123456',
+        p_role: params.role || 'user',
+      });
+      if (error) throw error;
+      return { success: true, data };
+    } catch (e: any) {
+      console.error('Admin create user error:', e);
+      return { success: false, error: e.message || 'Erro ao criar usuário' };
+    }
+  },
 };
 
 export const logsApi = {
   async getAll() {
-    const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
-    return apiResponse<any[]>(data, error);
+    try {
+      const { data, error } = await supabase.rpc('admin_get_logs', { p_limit: 200 });
+      if (error) throw error;
+      // RPC retorna jsonb array com admin_name já populado
+      return { success: true, data: (data || []) as any[] };
+    } catch (e: any) {
+      // Fallback: busca direto da tabela (sem nome do admin)
+      const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(200);
+      return apiResponse<any[]>(data, error);
+    }
   },
   async create(acao: string, descricao: string) {
+    const userId = await getMyUserId();
     const { error } = await supabase.from('audit_logs').insert({ 
-      action: 'CREATE', 
+      user_id: userId,
+      action: acao, 
       entity: descricao,
       metadata: { acao, descricao }
     });

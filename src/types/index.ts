@@ -148,6 +148,7 @@ export interface AuditLog {
   ip_address?: string;
   user_agent?: string;
   created_at: string;
+  admin_name?: string; // Preenchido via RPC admin_get_logs
 }
 
 export interface TopDriver {

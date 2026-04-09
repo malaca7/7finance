@@ -15,6 +15,7 @@ import type {
   AuditLog, SmartAlert, UserStatus, DateFilter 
 } from '../types';
 import { clsx } from 'clsx';
+import toast from 'react-hot-toast';
 
 const roleOptions = [
   { value: 'user', label: 'Usuário' },
@@ -56,9 +57,15 @@ export function AdminPage() {
   // Form states for Create/Edit
   const [formNome, setFormNome] = useState('');
   const [formEmail, setFormEmail] = useState('');
+  const [formTelefone, setFormTelefone] = useState('');
   const [formStatus, setFormStatus] = useState<UserStatus>('ativo');
   const [formRole, setFormRole] = useState<UserRole>('user');
   const [formPassword, setFormPassword] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Logs filtering
+  const [logSearchTerm, setLogSearchTerm] = useState('');
+  const [logFilterAction, setLogFilterAction] = useState<string>('all');
 
   useEffect(() => {
     loadAllAdminData();
@@ -88,6 +95,7 @@ export function AdminPage() {
       setSelectedUser(user);
       setFormNome(user.nome || user.name || '');
       setFormEmail(user.email || '');
+      setFormTelefone(user.telefone || user.phone || '');
       setFormStatus((user.status || (user.is_active === false ? 'inativo' : 'ativo')) as UserStatus);
       setFormRole(user.role as UserRole);
       setFormPassword('');
@@ -95,6 +103,7 @@ export function AdminPage() {
       setSelectedUser(null);
       setFormNome('');
       setFormEmail('');
+      setFormTelefone('');
       setFormStatus('ativo');
       setFormRole('user');
       setFormPassword('');
@@ -103,38 +112,74 @@ export function AdminPage() {
   };
 
   const handleSaveUser = async () => {
-    const userData = {
-      nome: formNome,
-      email: formEmail,
-      status: formStatus,
-      role: formRole,
-      password: formPassword || undefined
-    };
-
-    let res;
-    if (selectedUser) {
-      res = await usersApi.update(selectedUser.id, userData);
-      if (res.success) {
-        logsApi.create('Usuário Editado', `Admin ${currentUser?.nome} editou o usuário ${formNome}`);
-      }
-    } else {
-      res = await usersApi.update(0, userData); // Admin create via POST /api.php?entity=usuario
-      if (res.success) {
-        logsApi.create('Usuário Criado', `Admin ${currentUser?.nome} criou o usuário ${formNome}`);
-      }
+    if (!formNome.trim()) {
+      toast.error('Nome é obrigatório');
+      return;
     }
-    
-    if (res?.success) {
-      setIsUserModalOpen(false);
-      loadAllAdminData();
-    } else {
-      alert('Erro ao salvar usuário: ' + (res?.error || 'Erro desconhecido'));
+
+    setIsSaving(true);
+    try {
+      let res;
+      if (selectedUser) {
+        // EDITAR usuário existente
+        const userData: any = {
+          nome: formNome,
+          email: formEmail || undefined,
+          telefone: formTelefone || undefined,
+          status: formStatus,
+          role: formRole,
+        };
+        res = await usersApi.update(selectedUser.id, userData);
+        if (res.success) {
+          await logsApi.create('EDITAR_USUARIO', `Editou usuário "${formNome}" (${selectedUser.id})`);
+          toast.success('Usuário atualizado com sucesso!');
+        }
+      } else {
+        // CRIAR novo usuário via RPC admin_create_user
+        if (!formTelefone.trim() && !formEmail.trim()) {
+          toast.error('Informe email ou telefone');
+          setIsSaving(false);
+          return;
+        }
+        if (!formPassword.trim()) {
+          toast.error('Senha é obrigatória para novos usuários');
+          setIsSaving(false);
+          return;
+        }
+
+        res = await adminApi.createUser({
+          name: formNome,
+          email: formEmail || undefined,
+          phone: formTelefone || undefined,
+          password: formPassword,
+          role: formRole,
+        });
+        if (res.success) {
+          // Se criou com status inativo, atualizar
+          if (formStatus !== 'ativo' && res.data?.user_id) {
+            await usersApi.update(res.data.user_id, { status: formStatus });
+          }
+          await logsApi.create('CRIAR_USUARIO', `Criou usuário "${formNome}" (${res.data?.email || formEmail})`);
+          toast.success('Usuário criado com sucesso!');
+        }
+      }
+      
+      if (res?.success) {
+        setIsUserModalOpen(false);
+        loadAllAdminData();
+      } else {
+        toast.error(res?.error || 'Erro ao salvar usuário');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro inesperado');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleExport = (format: 'csv' | 'pdf') => {
-    alert(`Exportando dados em formato ${format.toUpperCase()}...`);
-    logsApi.create('Exportação', `Admin exportou relatórios em ${format}`);
+    toast.success(`Exportando dados em formato ${format.toUpperCase()}...`);
+    logsApi.create('EXPORTAR', `Exportou relatórios em ${format}`);
   };
 
   const filteredUsers = useMemo(() => {
@@ -406,16 +451,17 @@ export function AdminPage() {
                   <thead>
                     <tr className="bg-premium-dark border-b border-premium-gray/30">
                       <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Usuário</th>
-                      <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Perfil & Tipo</th>
-                      <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Veículo</th>
+                      <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Telefone</th>
+                      <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Perfil</th>
                       <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                      <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Cadastro</th>
                       <th className="text-right p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-premium-gray/20">
                     {filteredUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="p-8 text-center text-gray-500">Nenhum usuário encontrado</td>
+                        <td colSpan={6} className="p-8 text-center text-gray-500">Nenhum usuário encontrado</td>
                       </tr>
                     ) : (
                       filteredUsers.map(user => (
@@ -432,21 +478,15 @@ export function AdminPage() {
                             </div>
                           </td>
                           <td className="p-4">
-                            <div className="flex gap-2">
-                              <span className={clsx(
-                                "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                                user.role === 'admin' ? "bg-premium-gold/20 text-premium-gold" : "bg-blue-500/20 text-blue-400"
-                              )}>
-                                {user.role}
-                              </span>
-                              <span className="px-2 py-0.5 bg-premium-gray rounded text-[10px] font-bold uppercase text-gray-400">
-                                {user.tipo === 'app' ? 'Transporte App' : 'Particular'}
-                              </span>
-                            </div>
+                            <p className="text-sm text-gray-300">{user.telefone || user.phone || '-'}</p>
                           </td>
                           <td className="p-4">
-                            <p className="text-sm text-white">{user.veiculo || 'N/A'}</p>
-                            <p className="text-xs text-gray-500 font-medium">{user.placa || 'Sem placa'}</p>
+                            <span className={clsx(
+                              "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                              user.role === 'admin' ? "bg-premium-gold/20 text-premium-gold" : "bg-blue-500/20 text-blue-400"
+                            )}>
+                              {user.role === 'admin' ? 'Admin' : 'Usuário'}
+                            </span>
                           </td>
                           <td className="p-4">
                             <span className={clsx(
@@ -456,17 +496,22 @@ export function AdminPage() {
                               {(user.status || (user.is_active === false ? 'inativo' : 'ativo')).replace('_', ' ')}
                             </span>
                           </td>
+                          <td className="p-4">
+                            <p className="text-xs text-gray-500">{user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '-'}</p>
+                          </td>
                           <td className="p-4 text-right">
                             <div className="flex justify-end gap-2">
                               <button 
                                 onClick={() => openUserModal(user)}
                                 className="p-2 text-gray-400 hover:text-premium-gold hover:bg-premium-gold/10 rounded-lg transition-all"
+                                title="Editar"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
                               <button 
                                 onClick={() => { setUserToDelete(user.id); setIsDeleteModalOpen(true); }}
                                 className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                title="Excluir"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -569,32 +614,174 @@ export function AdminPage() {
 
         {activeTab === 'logs' && (
           <div className="space-y-4 animate-fade-in">
+            {/* Filtros de Logs */}
+            <Card className="!p-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <input 
+                    type="text"
+                    placeholder="Buscar nos logs por ação, descrição ou admin..."
+                    value={logSearchTerm}
+                    onChange={(e) => setLogSearchTerm(e.target.value)}
+                    className="w-full bg-premium-black border border-premium-gray/50 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:ring-1 focus:ring-premium-gold transition-all"
+                  />
+                </div>
+                <Select 
+                  value={logFilterAction}
+                  onChange={(e) => setLogFilterAction(e.target.value)}
+                  options={[
+                    { value: 'all', label: 'Todas Ações' },
+                    { value: 'CRIAR_USUARIO', label: 'Criar Usuário' },
+                    { value: 'EDITAR_USUARIO', label: 'Editar Usuário' },
+                    { value: 'EXCLUIR_USUARIO', label: 'Excluir Usuário' },
+                    { value: 'EXPORTAR', label: 'Exportar' },
+                    { value: 'LOGIN', label: 'Login' },
+                  ]}
+                  className="!w-48"
+                />
+                <Button variant="outline" size="sm" onClick={loadAllAdminData}>
+                  <Activity className="w-4 h-4 mr-2" />
+                  Atualizar
+                </Button>
+              </div>
+            </Card>
+
+            {/* Stats rápidos dos logs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="!p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500/10 rounded-lg">
+                    <FileText className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-white">{logs.length}</p>
+                    <p className="text-[10px] text-gray-500 uppercase">Total Registros</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="!p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-500/10 rounded-lg">
+                    <UserCheck className="w-4 h-4 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-white">{logs.filter(l => l.action === 'CRIAR_USUARIO').length}</p>
+                    <p className="text-[10px] text-gray-500 uppercase">Usuários Criados</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="!p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-500/10 rounded-lg">
+                    <Edit2 className="w-4 h-4 text-yellow-400" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-white">{logs.filter(l => l.action === 'EDITAR_USUARIO').length}</p>
+                    <p className="text-[10px] text-gray-500 uppercase">Edições</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="!p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-500/10 rounded-lg">
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-white">{logs.filter(l => l.action === 'EXCLUIR_USUARIO').length}</p>
+                    <p className="text-[10px] text-gray-500 uppercase">Exclusões</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Tabela de logs */}
             <Card className="!p-0 overflow-hidden">
                <div className="overflow-x-auto">
                  <table className="w-full">
                     <thead>
                       <tr className="bg-premium-dark border-b border-premium-gray/30">
-                        <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Data</th>
-                        <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Admin</th>
+                        <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Data / Hora</th>
+                        <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Administrador</th>
                         <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Ação</th>
                         <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Descrição</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-premium-gray/20">
-                      {logs.length === 0 ? (
-                        <tr><td colSpan={4} className="p-8 text-center text-gray-500">Nenhum registro de auditoria</td></tr>
-                      ) : (
-                        logs.map(log => (
-                          <tr key={log.id} className="text-xs hover:bg-premium-gray/10">
-                            <td className="p-4 text-gray-500">{new Date(log.created_at || '').toLocaleString('pt-BR')}</td>
-                            <td className="p-4 text-premium-gold font-bold">{log.user_id || '-'}</td>
-                            <td className="p-4"><span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded uppercase font-bold text-[9px] text-white">{log.action}</span></td>
-                            <td className="p-4 text-gray-400">{log.entity || (log.metadata as any)?.descricao || '-'}</td>
-                          </tr>
-                        ))
-                      )}
+                      {(() => {
+                        const filtered = logs.filter(log => {
+                          const matchesSearch = logSearchTerm === '' || 
+                            (log.action || '').toLowerCase().includes(logSearchTerm.toLowerCase()) ||
+                            (log.entity || '').toLowerCase().includes(logSearchTerm.toLowerCase()) ||
+                            ((log as any).admin_name || '').toLowerCase().includes(logSearchTerm.toLowerCase());
+                          const matchesAction = logFilterAction === 'all' || log.action === logFilterAction;
+                          return matchesSearch && matchesAction;
+                        });
+                        
+                        if (filtered.length === 0) {
+                          return (
+                            <tr><td colSpan={4} className="p-8 text-center text-gray-500">
+                              <div className="flex flex-col items-center gap-2">
+                                <History className="w-8 h-8 text-gray-600" />
+                                <p>Nenhum registro de auditoria encontrado</p>
+                              </div>
+                            </td></tr>
+                          );
+                        }
+                        
+                        return filtered.map(log => {
+                          const actionColors: Record<string, string> = {
+                            'CRIAR_USUARIO': 'bg-green-500/20 text-green-400 border-green-500/30',
+                            'EDITAR_USUARIO': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+                            'EXCLUIR_USUARIO': 'bg-red-500/20 text-red-400 border-red-500/30',
+                            'EXPORTAR': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+                            'LOGIN': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+                          };
+                          const actionLabels: Record<string, string> = {
+                            'CRIAR_USUARIO': 'Criar Usuário',
+                            'EDITAR_USUARIO': 'Editar Usuário',
+                            'EXCLUIR_USUARIO': 'Excluir Usuário',
+                            'EXPORTAR': 'Exportação',
+                            'LOGIN': 'Login',
+                            'CREATE': 'Criar',
+                          };
+                          const colorClass = actionColors[log.action] || 'bg-white/5 text-gray-400 border-white/10';
+                          
+                          return (
+                            <tr key={log.id} className="text-xs hover:bg-premium-gray/10 transition-colors">
+                              <td className="p-4">
+                                <p className="text-gray-300 font-medium">{new Date(log.created_at || '').toLocaleDateString('pt-BR')}</p>
+                                <p className="text-gray-500 text-[10px]">{new Date(log.created_at || '').toLocaleTimeString('pt-BR')}</p>
+                              </td>
+                              <td className="p-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full bg-premium-gold/10 flex items-center justify-center text-premium-gold text-[10px] font-bold">
+                                    {((log as any).admin_name || 'S').charAt(0)}
+                                  </div>
+                                  <span className="text-premium-gold font-bold">{(log as any).admin_name || 'Sistema'}</span>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <span className={clsx("px-2 py-0.5 border rounded text-[9px] font-bold uppercase", colorClass)}>
+                                  {actionLabels[log.action] || log.action}
+                                </span>
+                              </td>
+                              <td className="p-4 text-gray-400 max-w-xs truncate">{log.entity || (log.metadata as any)?.descricao || '-'}</td>
+                            </tr>
+                          );
+                        });
+                      })()}
                     </tbody>
                  </table>
+               </div>
+               {/* Footer dos logs */}
+               <div className="p-4 border-t border-premium-gray/30 flex items-center justify-between bg-premium-dark/50">
+                 <span className="text-xs text-gray-500">
+                   {logs.length} registros de auditoria
+                 </span>
+                 <span className="text-xs text-gray-600">
+                   Últimas 200 ações registradas
+                 </span>
                </div>
             </Card>
           </div>
@@ -605,7 +792,7 @@ export function AdminPage() {
       <Modal 
         isOpen={isUserModalOpen} 
         onClose={() => setIsUserModalOpen(false)} 
-        title={selectedUser ? "Editar Usuário" : "Configurar Novo Usuário"}
+        title={selectedUser ? "Editar Usuário" : "Criar Novo Usuário"}
       >
         <div className="space-y-4">
            <Input 
@@ -615,11 +802,24 @@ export function AdminPage() {
              onChange={(e) => setFormNome(e.target.value)} 
            />
            <Input 
-             label="Email Corporativo" 
-             placeholder="exemplo@7finance.com" 
+             label="Telefone" 
+             placeholder="81996138924" 
+             value={formTelefone} 
+             onChange={(e) => setFormTelefone(e.target.value)} 
+           />
+           <Input 
+             label="Email (opcional se informar telefone)" 
+             placeholder="exemplo@email.com" 
              value={formEmail} 
              onChange={(e) => setFormEmail(e.target.value)} 
            />
+           <p className="text-[10px] text-gray-500 -mt-2">
+             {!formEmail && formTelefone 
+               ? `Login será: ${formTelefone.replace(/\D/g, '')}@7finance.com`
+               : formEmail 
+                 ? `Login será: ${formEmail}`
+                 : 'Informe email ou telefone para gerar o login'}
+           </p>
            <div className="grid grid-cols-2 gap-4">
               <Select 
                 label="Status" 
@@ -635,18 +835,25 @@ export function AdminPage() {
               />
            </div>
            
-           <Input 
-             label={selectedUser ? "Nova Senha (deixe em branco para manter)" : "Senha Inicial"} 
-             type="password"
-             placeholder="******" 
-             value={formPassword} 
-             onChange={(e) => setFormPassword(e.target.value)} 
-           />
+           {!selectedUser ? (
+             <Input 
+               label="Senha Inicial" 
+               type="password"
+               placeholder="Mínimo 6 caracteres" 
+               value={formPassword} 
+               onChange={(e) => setFormPassword(e.target.value)} 
+             />
+           ) : (
+             <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+               <p className="text-[10px] text-gray-400 mb-1">💡 Alterar senha</p>
+               <p className="text-xs text-gray-500">Para redefinir a senha, o usuário pode usar o fluxo de "Esqueci minha senha" ou você pode recriá-lo.</p>
+             </div>
+           )}
 
            <div className="flex gap-2 pt-4">
               <Button variant="secondary" className="flex-1" onClick={() => setIsUserModalOpen(false)}>Cancelar</Button>
-              <Button className="flex-1" onClick={handleSaveUser}>
-                {selectedUser ? "Salvar Alterações" : "Criar Usuário"}
+              <Button className="flex-1" onClick={handleSaveUser} disabled={isSaving}>
+                {isSaving ? 'Salvando...' : selectedUser ? "Salvar Alterações" : "Criar Usuário"}
               </Button>
            </div>
         </div>
@@ -658,9 +865,15 @@ export function AdminPage() {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={async () => {
           if (userToDelete) {
-            await usersApi.delete(userToDelete);
-            logsApi.create('Exclusão', `Usuário ID ${userToDelete} foi removido do sistema.`);
-            loadAllAdminData();
+            const deletedUser = allUsers.find(u => u.id === userToDelete);
+            const res = await usersApi.delete(userToDelete);
+            if (res.success !== false) {
+              await logsApi.create('EXCLUIR_USUARIO', `Excluiu usuário "${deletedUser?.nome || deletedUser?.name || userToDelete}"`);
+              toast.success('Usuário excluído com sucesso');
+              loadAllAdminData();
+            } else {
+              toast.error('Erro ao excluir usuário');
+            }
           }
           setIsDeleteModalOpen(false);
         }}
