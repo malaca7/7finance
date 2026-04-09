@@ -4,7 +4,6 @@ import {
   User as UserIcon, 
   Mail, 
   Phone, 
-  Car, 
   Save, 
   Hash,
   Crop as CropIcon,
@@ -46,8 +45,6 @@ export function ProfilePage() {
     email: '',
     telefone: '',
     tipo: 'app' as DriverType,
-    veiculo: '',
-    placa: '',
     foto_url: '',
   });
 
@@ -60,8 +57,6 @@ export function ProfilePage() {
         email: user.email || '',
         telefone: user.telefone || user.phone || '',
         tipo: (user.tipo || user.role || 'app') as DriverType,
-        veiculo: user.veiculo || '',
-        placa: user.placa || '',
         foto_url: user.foto_url || user.avatar_url || '',
       });
       fetchVeiculos();
@@ -182,12 +177,6 @@ export function ProfilePage() {
     if (!formData.nome.trim()) newErrors.nome = 'Nome é obrigatório';
     if (!formData.email.trim()) newErrors.email = 'Email é obrigatório';
     if (!formData.telefone.trim()) newErrors.telefone = 'Telefone é obrigatório';
-    
-    // Simple car plate validation (ABC-1234 or ABC1D23)
-    const plateRegex = /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/i;
-    if (formData.placa && !plateRegex.test(formData.placa.replace('-', ''))) {
-      newErrors.placa = 'Placa inválida (ex: ABC-1234 ou ABC1D23)';
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -202,7 +191,6 @@ export function ProfilePage() {
     try {
       const response = await usersApi.update(user.id, {
         ...formData,
-        placa: formData.placa.toUpperCase(),
       });
 
       if (response.success && response.data) {
@@ -230,7 +218,7 @@ export function ProfilePage() {
       <div className="max-w-2xl mx-auto space-y-6 pb-24 lg:pb-8">
         <header>
           <h1 className="text-3xl font-bold text-white tracking-tight">Meu <span className="text-premium-gold">Perfil</span></h1>
-          <p className="text-gray-400 text-sm">Gerencie suas informações pessoais e de veículo</p>
+          <p className="text-gray-400 text-sm">Gerencie suas informações pessoais</p>
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -334,35 +322,6 @@ export function ProfilePage() {
                     ]}
                   />
                 </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card>
-            <div className="flex items-center gap-2 mb-6 border-b border-premium-gray/30 pb-4">
-              <Car className="w-5 h-5 text-premium-gold" />
-              <h3 className="font-bold text-white uppercase tracking-wider text-sm">Dados do Veículo</h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Modelo do Veículo</label>
-                <Input 
-                  value={formData.veiculo}
-                  onChange={(e) => setFormData({...formData, veiculo: e.target.value})}
-                  placeholder="Ex: Toyota Corolla"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Placa</label>
-                <Input 
-                  value={formData.placa}
-                  onChange={(e) => setFormData({...formData, placa: e.target.value.toUpperCase()})}
-                  error={errors.placa}
-                  placeholder="ABC-1234"
-                  maxLength={8}
-                />
               </div>
             </div>
           </Card>
