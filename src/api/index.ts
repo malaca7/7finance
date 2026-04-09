@@ -295,16 +295,16 @@ export const expensesApi = {
 
 export const maintenanceApi = {
   async getAll() { 
-    const { data, error } = await supabase.from('maintenance').select('*').order('data', { ascending: false });
+    const { data, error } = await supabase.from('maintenance').select('*, veiculos(id, modelo, placa)').order('data', { ascending: false });
     return apiResponse<Maintenance[]>(data, error);
   },
   async create(data: any) { 
     const userId = await getMyUserId();
-    const { data: result, error } = await supabase.from('maintenance').insert({ ...data, usuario_id: userId }).select().single();
+    const { data: result, error } = await supabase.from('maintenance').insert({ ...data, usuario_id: userId }).select('*, veiculos(id, modelo, placa)').single();
     return apiResponse<Maintenance>(result, error);
   },
   async update(id: number, data: any) { 
-    const { data: result, error } = await supabase.from('maintenance').update(data).eq('id', id).select().single();
+    const { data: result, error } = await supabase.from('maintenance').update(data).eq('id', id).select('*, veiculos(id, modelo, placa)').single();
     return apiResponse<Maintenance>(result, error);
   },
   async delete(id: number) { 

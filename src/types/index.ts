@@ -100,6 +100,8 @@ export interface Maintenance {
   proxima_manutencao_km?: number;
   status: MaintenanceStatus;
   created_at?: string;
+  // Join data from veiculos table
+  veiculos?: { id: number; modelo: string; placa?: string } | null;
 }
 
 // Dashboard summary types
