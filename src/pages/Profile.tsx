@@ -29,8 +29,8 @@ export function ProfilePage() {
   const [editingVeiculo, setEditingVeiculo] = useState<any>({
     modelo: '',
     placa: '',
-    km_atual: 0,
-    tipo: 'app'
+    cor: '',
+    ano: null
   });
   
   // Crop state
@@ -56,13 +56,13 @@ export function ProfilePage() {
   useEffect(() => {
     if (user) {
       setFormData({
-        nome: user.nome || '',
+        nome: user.nome || user.name || '',
         email: user.email || '',
-        telefone: user.telefone || '',
-        tipo: (user.tipo || 'app') as DriverType,
+        telefone: user.telefone || user.phone || '',
+        tipo: (user.tipo || user.role || 'app') as DriverType,
         veiculo: user.veiculo || '',
         placa: user.placa || '',
-        foto_url: user.foto_url || '',
+        foto_url: user.foto_url || user.avatar_url || '',
       });
       fetchVeiculos();
     }
@@ -80,8 +80,8 @@ export function ProfilePage() {
     const veiculoData = {
       modelo: editingVeiculo.modelo,
       placa: editingVeiculo.placa.toUpperCase(),
-      km_atual: Number(editingVeiculo.km_atual) || 0,
-      tipo: editingVeiculo.tipo || 'app'
+      cor: editingVeiculo.cor || null,
+      ano: Number(editingVeiculo.ano) || null,
     };
 
     const response = editingVeiculo.id 
@@ -266,7 +266,7 @@ export function ProfilePage() {
               </div>
               <p className="text-[10px] text-premium-gold/60 mt-3 font-bold uppercase tracking-widest italic animate-pulse">Clique na foto para alterar</p>
               
-              <h2 className="text-xl font-bold text-white mt-4">{user.nome}</h2>
+              <h2 className="text-xl font-bold text-white mt-4">{user.nome || user.name}</h2>
               <span className="text-xs text-premium-gold font-bold uppercase tracking-widest px-3 py-1 bg-premium-gold/10 rounded-full mt-2 border border-premium-gold/20">
                 {user.role === 'admin' ? 'Administrador' : 'Motorista ' + (user.tipo === 'app' ? 'App' : 'Particular')}
               </span>
@@ -521,24 +521,13 @@ export function ProfilePage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase">Quilometragem Atual (km)</label>
-              <Input 
-                type="number"
-                value={editingVeiculo?.km_atual}
-                onChange={(e) => setEditingVeiculo({...editingVeiculo, km_atual: e.target.value})}
-                placeholder="Ex: 12000"
-                required
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase">Tipo</label>
+              <label className="text-xs font-bold text-gray-500 uppercase">Status</label>
               <Select 
-                value={editingVeiculo?.tipo}
-                onChange={(e) => setEditingVeiculo({...editingVeiculo, tipo: e.target.value})}
+                value={editingVeiculo?.status || 'ativo'}
+                onChange={(e) => setEditingVeiculo({...editingVeiculo, status: e.target.value})}
                 options={[
-                  { value: 'app', label: 'Motorista de Aplicativo' },
-                  { value: 'particular', label: 'Motorista Particular / Taxista' }
+                  { value: 'ativo', label: 'Ativo' },
+                  { value: 'inativo', label: 'Inativo' },
                 ]}
                 required
               />

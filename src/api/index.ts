@@ -11,13 +11,60 @@ const apiResponse = <T>(data: T | null, error: any): ApiResponse<T> => {
   return { success: true, data: data as T };
 };
 
+// Cache do users.id (diferente do auth.uid()!)
+let _cachedUserId: string | null = null;
+
+async function getMyUserId(): Promise<string | null> {
+  if (_cachedUserId) return _cachedUserId;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
+  _cachedUserId = data?.id || null;
+  return _cachedUserId;
+}
+
+// Limpa cache ao trocar sessão
+supabase.auth.onAuthStateChange(() => { _cachedUserId = null; });
+
+// Calcula data início baseado no filtro
+function getFilterStartDate(filter?: DateFilter): string | null {
+  if (!filter || filter === 'personalizado') return null;
+  const now = new Date();
+  if (filter === 'diario') {
+    return now.toISOString().split('T')[0];
+  } else if (filter === 'semanal') {
+    now.setDate(now.getDate() - 7);
+    return now.toISOString().split('T')[0];
+  } else if (filter === 'mensal') {
+    now.setMonth(now.getMonth() - 1);
+    return now.toISOString().split('T')[0];
+  }
+  return null;
+}
+
+// Adaptador: converte dados do banco (inglês) para aliases usados no frontend (português)
+function adaptUser(raw: any): User {
+  if (!raw) return raw;
+  return {
+    ...raw,
+    nome: raw.name || '',
+    telefone: raw.phone || '',
+    foto_url: raw.avatar_url || '',
+    status: raw.is_active === false ? 'inativo' : 'ativo',
+    veiculo: '',
+    placa: '',
+    tipo: raw.role || 'user',
+  };
+}
+
 export const authApi = {
-  async login(telefone: string, senha_hash: string): Promise<ApiResponse<{ user: User; token: string }>> {
+  async login(telefone: string, senha: string): Promise<ApiResponse<{ user: User; token: string }>> {
     try {
-      const email = `${telefone.replace(/\D/g, '')}@7finance.com`;
+      // Se já tem @, usa como email direto; senão, converte telefone → email
+      const email = telefone.includes('@') ? telefone : `${telefone.replace(/\D/g, '')}@7finance.com`;
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
-        password: senha_hash,
+        password: senha,
       });
 
       if (authError) return { success: false, error: authError.message };
@@ -33,7 +80,7 @@ export const authApi = {
       return {
         success: true,
         data: {
-          user: userData as User,
+          user: adaptUser(userData),
           token: authData.session?.access_token || '',
         },
       };
@@ -45,22 +92,43 @@ export const authApi = {
 
   async register(userData: any): Promise<ApiResponse<{ user: User; token: string }>> {
     try {
-      const phone = userData.telefone.replace(/\D/g, '');
-      const email = `${phone}@7finance.com`;
-      
+      const email = userData.email;
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
-        password: userData.senha_hash,
+        password: userData.password,
+        options: {
+          data: { name: userData.nome },
+        },
       });
 
-      if (authError) return { success: false, error: authError.message };
+      if (authError) {
+        if (authError.message.toLowerCase().includes('rate limit')) {
+          return { success: false, error: 'Muitas tentativas de cadastro. Aguarde alguns minutos e tente novamente.' };
+        }
+        return { success: false, error: authError.message };
+      }
 
+      // Se o Supabase retornou user sem session, pode ser que o email já exista
+      // ou que a confirmação ainda esteja ativa
+      if (authData.user && !authData.session) {
+        // Tenta fazer login direto caso o confirm email esteja desativado
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+          email,
+          password: userData.password,
+        });
+        if (!loginError && loginData.session) {
+          // Login funcionou, o user já existia — seguir com o fluxo
+          authData.session = loginData.session;
+        }
+      }
+
+      // Colunas REAIS do banco: name, phone, email, auth_id, role
       const newUser = {
-        nome: userData.nome,
-        telefone: userData.telefone,
+        name: userData.nome,
+        phone: userData.telefone?.replace(/\D/g, ''),
+        email: userData.email,
         auth_id: authData.user?.id,
         role: 'user',
-        status: 'ativo'
       };
 
       const { data: profile, error: profileError } = await supabase
@@ -74,7 +142,7 @@ export const authApi = {
       return {
         success: true,
         data: {
-          user: profile as User,
+          user: adaptUser(profile),
           token: authData.session?.access_token || '',
         },
       };
@@ -94,8 +162,9 @@ export const authApi = {
         .select('*')
         .eq('auth_id', user.id)
         .single();
-        
-      return apiResponse<User>(profile, error);
+      
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: adaptUser(profile) };
     } catch (err) {
       return { success: false, error: 'Erro ao buscar perfil' };
     }
@@ -105,11 +174,31 @@ export const authApi = {
 export const usersApi = {
   async getAll() { 
     const { data, error } = await supabase.from('users').select('*');
-    return apiResponse<User[]>(data, error);
+    if (error) return apiResponse<User[]>(null, error);
+    return { success: true, data: (data || []).map(adaptUser) };
   },
-  async update(id: string | number, data: any) { 
-    const { data: result, error } = await supabase.from('users').update(data).eq('id', id).select().single();
-    return apiResponse<User>(result, error);
+  async update(id: string | number, updateData: any) {
+    // Converte aliases PT → colunas reais EN
+    const mapped: any = {};
+    if (updateData.nome !== undefined) mapped.name = updateData.nome;
+    if (updateData.telefone !== undefined) mapped.phone = updateData.telefone?.replace(/\D/g, '');
+    if (updateData.email !== undefined) mapped.email = updateData.email;
+    if (updateData.foto_url !== undefined) mapped.avatar_url = updateData.foto_url;
+    if (updateData.role !== undefined) mapped.role = updateData.role;
+    if (updateData.status !== undefined) mapped.is_active = updateData.status === 'ativo';
+    // Campos que já são do banco passam direto
+    if (updateData.name !== undefined) mapped.name = updateData.name;
+    if (updateData.phone !== undefined) mapped.phone = updateData.phone;
+    if (updateData.avatar_url !== undefined) mapped.avatar_url = updateData.avatar_url;
+    if (updateData.is_active !== undefined) mapped.is_active = updateData.is_active;
+
+    const { data: result, error } = await supabase.from('users').update(mapped).eq('id', id).select().single();
+    if (error) return apiResponse<User>(null, error);
+    return { success: true, data: adaptUser(result) };
+  },
+  async delete(id: string | number) {
+    const { error } = await supabase.from('users').delete().eq('id', id);
+    return apiResponse<void>(null, error);
   },
 };
 
@@ -119,7 +208,8 @@ export const veiculosApi = {
     return apiResponse<any[]>(data, error);
   },
   async create(data: any) { 
-    const { data: result, error } = await supabase.from('veiculos').insert(data).select().single();
+    const userId = await getMyUserId();
+    const { data: result, error } = await supabase.from('veiculos').insert({ ...data, usuario_id: userId }).select().single();
     return apiResponse<any>(result, error);
   },
   async update(id: number, data: any) { 
@@ -138,7 +228,8 @@ export const kmApi = {
     return apiResponse<KmRegistry[]>(data, error);
   },
   async create(data: any) { 
-    const { data: result, error } = await supabase.from('km_registry').insert(data).select().single();
+    const userId = await getMyUserId();
+    const { data: result, error } = await supabase.from('km_registry').insert({ ...data, usuario_id: userId }).select().single();
     return apiResponse<KmRegistry>(result, error);
   },
   async update(id: number, data: any) { 
@@ -152,12 +243,16 @@ export const kmApi = {
 };
 
 export const earningsApi = {
-  async getAll() { 
-    const { data, error } = await supabase.from('earnings').select('*').order('data', { ascending: false });
+  async getAll(filter?: DateFilter) { 
+    let query = supabase.from('earnings').select('*').order('data', { ascending: false });
+    const startDate = getFilterStartDate(filter);
+    if (startDate) query = query.gte('data', startDate);
+    const { data, error } = await query;
     return apiResponse<Earnings[]>(data, error);
   },
   async create(data: any) { 
-    const { data: result, error } = await supabase.from('earnings').insert(data).select().single();
+    const userId = await getMyUserId();
+    const { data: result, error } = await supabase.from('earnings').insert({ ...data, usuario_id: userId }).select().single();
     return apiResponse<Earnings>(result, error);
   },
   async update(id: number, data: any) { 
@@ -171,12 +266,16 @@ export const earningsApi = {
 };
 
 export const expensesApi = {
-  async getAll() { 
-    const { data, error } = await supabase.from('expenses').select('*').order('data', { ascending: false });
+  async getAll(filter?: DateFilter) { 
+    let query = supabase.from('expenses').select('*').order('data', { ascending: false });
+    const startDate = getFilterStartDate(filter);
+    if (startDate) query = query.gte('data', startDate);
+    const { data, error } = await query;
     return apiResponse<Expense[]>(data, error);
   },
   async create(data: any) { 
-    const { data: result, error } = await supabase.from('expenses').insert(data).select().single();
+    const userId = await getMyUserId();
+    const { data: result, error } = await supabase.from('expenses').insert({ ...data, usuario_id: userId }).select().single();
     return apiResponse<Expense>(result, error);
   },
   async update(id: number, data: any) { 
@@ -195,7 +294,8 @@ export const maintenanceApi = {
     return apiResponse<Maintenance[]>(data, error);
   },
   async create(data: any) { 
-    const { data: result, error } = await supabase.from('maintenance').insert(data).select().single();
+    const userId = await getMyUserId();
+    const { data: result, error } = await supabase.from('maintenance').insert({ ...data, usuario_id: userId }).select().single();
     return apiResponse<Maintenance>(result, error);
   },
   async update(id: number, data: any) { 
@@ -209,10 +309,19 @@ export const maintenanceApi = {
 };
 
 export const dashboardApi = {
-  async getSummary(_filter?: DateFilter) {
+  async getSummary(filter?: DateFilter) {
     try {
-      const { data: earnings, error: earningsError } = await supabase.from('earnings').select('valor, tipo');
-      const { data: expenses, error: expensesError } = await supabase.from('expenses').select('valor, tipo');
+      const startDate = getFilterStartDate(filter);
+      let earningsQuery = supabase.from('earnings').select('valor, tipo');
+      let expensesQuery = supabase.from('expenses').select('valor, tipo');
+      if (startDate) {
+        earningsQuery = earningsQuery.gte('data', startDate);
+        expensesQuery = expensesQuery.gte('data', startDate);
+      }
+      const [{ data: earnings, error: earningsError }, { data: expenses, error: expensesError }] = await Promise.all([
+        earningsQuery,
+        expensesQuery,
+      ]);
       
       if (earningsError) throw earningsError;
       if (expensesError) throw expensesError;
@@ -278,7 +387,11 @@ export const logsApi = {
     return apiResponse<any[]>(data, error);
   },
   async create(acao: string, descricao: string) {
-    const { error } = await supabase.from('audit_logs').insert({ acao, descricao });
+    const { error } = await supabase.from('audit_logs').insert({ 
+      action: 'CREATE', 
+      entity: descricao,
+      metadata: { acao, descricao }
+    });
     return apiResponse<void>(null, error);
   }
 };

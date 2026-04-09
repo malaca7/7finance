@@ -33,8 +33,9 @@ export function MaintenancePage() {
 
   // Form state
   const [tipo, setTipo] = useState<MaintenanceType>('oleo');
-  const [kmLimite, setKmLimite] = useState('');
-  const [dataLimite, setDataLimite] = useState('');
+  const [proximaManutencaoKm, setProximaManutencaoKm] = useState('');
+  const [dataManutencao, setDataManutencao] = useState('');
+  const [valor, setValor] = useState('');
   const [obs, setObs] = useState('');
 
   // Get current KM
@@ -60,15 +61,19 @@ export function MaintenancePage() {
   const openModal = (maintenance?: Maintenance) => {
     if (maintenance) {
       setSelectedMaintenance(maintenance);
-      setTipo(maintenance.tipo || 'oleo');
-      setKmLimite(maintenance.km_limite?.toString() || '');
-      setDataLimite(maintenance.data_limite ? getLocalDatetimeForInput(maintenance.data_limite) : '');
-      setObs(maintenance.observacao || '');
+      // Tenta inferir o tipo a partir da descrição
+      const inferredType = maintenanceTypeOptions.find(o => maintenance.descricao?.toLowerCase().includes(o.label.toLowerCase()));
+      setTipo((inferredType?.value as MaintenanceType) || 'oleo');
+      setProximaManutencaoKm(maintenance.proxima_manutencao_km?.toString() || '');
+      setDataManutencao(maintenance.data ? getLocalDatetimeForInput(maintenance.data) : '');
+      setValor(maintenance.valor?.toString() || '');
+      setObs(maintenance.descricao || '');
     } else {
       setSelectedMaintenance(null);
       setTipo('oleo');
-      setKmLimite('');
-      setDataLimite(getLocalDatetimeForInput());
+      setProximaManutencaoKm('');
+      setDataManutencao(getLocalDatetimeForInput());
+      setValor('');
       setObs('');
     }
     setIsModalOpen(true);
@@ -80,11 +85,12 @@ export function MaintenancePage() {
 
     try {
       const maintenanceData = {
-        tipo,
-        km_realizada: kmLimite ? parseInt(kmLimite) : 0, // Mapping to backend column
-        valor: 0,
-        descricao: obs || '',
-        data: dataLimite, // Usa a data preenchida no modal
+        descricao: obs || getTypeLabel(tipo),
+        km_registro: proximaManutencaoKm ? parseInt(proximaManutencaoKm) : null,
+        proxima_manutencao_km: proximaManutencaoKm ? parseInt(proximaManutencaoKm) : null,
+        valor: valor ? parseFloat(valor) : 0,
+        data: dataManutencao || new Date().toISOString(),
+        status: selectedMaintenance?.status || 'pendente',
       };
 
       let response;
@@ -144,8 +150,9 @@ export function MaintenancePage() {
   const resetForm = () => {
     setSelectedMaintenance(null);
     setTipo('oleo');
-    setKmLimite('');
-    setDataLimite('');
+    setProximaManutencaoKm('');
+    setDataManutencao('');
+    setValor('');
     setObs('');
   };
 
@@ -184,8 +191,8 @@ export function MaintenancePage() {
   // Calculate alerts
   const alerts = maintenances.filter(m => {
     if (m.status === 'concluido') return false;
-    if (m.km_limite && currentKm >= m.km_limite) return true;
-    if (m.data_limite && new Date(m.data_limite) <= new Date()) return true;
+    if (m.proxima_manutencao_km && (currentKm ?? 0) >= m.proxima_manutencao_km) return true;
+    if (m.data && new Date(m.data) <= new Date()) return true;
     return false;
   });
 
@@ -277,12 +284,12 @@ export function MaintenancePage() {
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-5 h-5 text-red-500" />
                     <div>
-                      <p className="font-medium text-white">{getTypeLabel(alert.tipo)}</p>
+                      <p className="font-medium text-white">{alert.descricao || 'Manutenção'}</p>
                       <p className="text-sm text-gray-400">
-                        {alert.km_limite && currentKm >= alert.km_limite 
-                          ? `KM atual (${formatNumber(currentKm)}) excedeu limite (${formatNumber(alert.km_limite)})`
-                          : alert.data_limite && new Date(alert.data_limite) <= new Date()
-                            ? `Data limite excedida: ${displayLocaleDatetime(alert.data_limite)}`
+                        {alert.proxima_manutencao_km && (currentKm ?? 0) >= alert.proxima_manutencao_km 
+                          ? `KM atual (${formatNumber(currentKm ?? 0)}) excedeu limite (${formatNumber(alert.proxima_manutencao_km)})`
+                          : alert.data && new Date(alert.data) <= new Date()
+                            ? `Data limite excedida: ${displayLocaleDatetime(alert.data)}`
                             : 'Atenção necessária'
                         }
                       </p>
@@ -312,9 +319,9 @@ export function MaintenancePage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-premium-gray/30">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Tipo</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">KM Limite</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Data Limite</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Descrição</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Próx. KM</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Data</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
                     <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Ações</th>
                   </tr>
@@ -324,14 +331,14 @@ export function MaintenancePage() {
                     <tr key={maintenance.id} className="border-b border-premium-gray/20 hover:bg-premium-gray/20">
                       <td className="py-3 px-4">
                         <span className="px-2 py-1 bg-premium-gold/20 text-premium-gold rounded text-sm">
-                          {getTypeLabel(maintenance.tipo)}
+                          {maintenance.descricao || 'Manutenção'}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-white">
-                        {maintenance.km_limite ? `${formatNumber(maintenance.km_limite)} km` : '-'}
+                        {maintenance.proxima_manutencao_km ? `${formatNumber(maintenance.proxima_manutencao_km)} km` : '-'}
                       </td>
                       <td className="py-3 px-4 text-gray-400">
-                        {displayLocaleDatetime(maintenance.data_limite)}
+                        {displayLocaleDatetime(maintenance.data)}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-sm ${getStatusColor(maintenance.status)}`}>
@@ -395,18 +402,26 @@ export function MaintenancePage() {
           />
           
           <Input
-            label="KM Limite (opcional)"
+            label="Valor (R$)"
             type="number"
-            value={kmLimite}
-            onChange={(e) => setKmLimite(e.target.value)}
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+            placeholder="Ex: 150.00"
+          />
+
+          <Input
+            label="Próxima Manutenção KM (opcional)"
+            type="number"
+            value={proximaManutencaoKm}
+            onChange={(e) => setProximaManutencaoKm(e.target.value)}
             placeholder="Ex: 10000"
           />
           
           <Input
-            label="Data Limite (opcional)"
+            label="Data"
             type="datetime-local"
-            value={dataLimite}
-            onChange={(e) => setDataLimite(e.target.value)}
+            value={dataManutencao}
+            onChange={(e) => setDataManutencao(e.target.value)}
           />
           
           <Input

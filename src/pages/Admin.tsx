@@ -51,7 +51,7 @@ export function AdminPage() {
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
 
   // Form states for Create/Edit
   const [formNome, setFormNome] = useState('');
@@ -86,10 +86,10 @@ export function AdminPage() {
   const openUserModal = (user?: User) => {
     if (user) {
       setSelectedUser(user);
-      setFormNome(user.nome);
-      setFormEmail(user.email);
-      setFormStatus(user.status || 'ativo');
-      setFormRole(user.role);
+      setFormNome(user.nome || user.name || '');
+      setFormEmail(user.email || '');
+      setFormStatus((user.status || (user.is_active === false ? 'inativo' : 'ativo')) as UserStatus);
+      setFormRole(user.role as UserRole);
       setFormPassword('');
     } else {
       setSelectedUser(null);
@@ -140,12 +140,12 @@ export function AdminPage() {
   const filteredUsers = useMemo(() => {
     return allUsers.filter(user => {
       const matchesSearch = 
-        (user.nome || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ((user.nome || user.name) || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.telefone || '').includes(searchTerm);
+        ((user.telefone || user.phone) || '').includes(searchTerm);
       
       const matchesRole = filterRole === 'all' || user.role === filterRole;
-      const matchesStatus = filterStatus === 'all' || (user.status || 'ativo') === filterStatus;
+      const matchesStatus = filterStatus === 'all' || (user.status || (user.is_active === false ? 'inativo' : 'ativo')) === filterStatus;
 
       return matchesSearch && matchesRole && matchesStatus;
     });
@@ -423,10 +423,10 @@ export function AdminPage() {
                           <td className="p-4">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-premium-gold/10 border border-premium-gold/20 flex items-center justify-center text-premium-gold font-bold">
-                                {user.nome.charAt(0)}
+                                {(user.nome || user.name || 'U').charAt(0)}
                               </div>
                               <div>
-                                <p className="text-sm font-bold text-white">{user.nome}</p>
+                                <p className="text-sm font-bold text-white">{user.nome || user.name || 'Sem nome'}</p>
                                 <p className="text-xs text-gray-500">{user.email}</p>
                               </div>
                             </div>
@@ -451,9 +451,9 @@ export function AdminPage() {
                           <td className="p-4">
                             <span className={clsx(
                               "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                              getStatusColor(user.status)
+                              getStatusColor((user.status || (user.is_active === false ? 'inativo' : 'ativo')) as UserStatus)
                             )}>
-                              {(user.status || 'ativo').replace('_', ' ')}
+                              {(user.status || (user.is_active === false ? 'inativo' : 'ativo')).replace('_', ' ')}
                             </span>
                           </td>
                           <td className="p-4 text-right">
@@ -586,10 +586,10 @@ export function AdminPage() {
                       ) : (
                         logs.map(log => (
                           <tr key={log.id} className="text-xs hover:bg-premium-gray/10">
-                            <td className="p-4 text-gray-500">{new Date(log.data).toLocaleString('pt-BR')}</td>
-                            <td className="p-4 text-premium-gold font-bold">{log.usuario_nome}</td>
-                            <td className="p-4"><span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded uppercase font-bold text-[9px] text-white">{log.acao}</span></td>
-                            <td className="p-4 text-gray-400">{log.descricao}</td>
+                            <td className="p-4 text-gray-500">{new Date(log.created_at || '').toLocaleString('pt-BR')}</td>
+                            <td className="p-4 text-premium-gold font-bold">{log.user_id || '-'}</td>
+                            <td className="p-4"><span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded uppercase font-bold text-[9px] text-white">{log.action}</span></td>
+                            <td className="p-4 text-gray-400">{log.entity || (log.metadata as any)?.descricao || '-'}</td>
                           </tr>
                         ))
                       )}

@@ -86,21 +86,21 @@ export function Sidebar() {
           {/* User Info Mobile */}
           <div className="flex items-center gap-4 mb-8 p-4 bg-white/5 rounded-2xl border border-white/5">
             <div className="w-12 h-12 rounded-full bg-premium-dark border-2 border-premium-gold flex items-center justify-center shadow-glow-sm overflow-hidden">
-              {user?.foto_url ? (
+              {(user?.foto_url || user?.avatar_url) ? (
                 <img 
-                  src={user.foto_url} 
+                  src={user.foto_url || user.avatar_url || ''} 
                   alt="Avatar" 
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <span className="text-premium-gold font-extrabold text-xl">
-                  {user?.nome?.charAt(0).toUpperCase() || 'U'}
+                  {(user?.nome || user?.name || 'U').charAt(0).toUpperCase()}
                 </span>
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="text-white font-bold truncate leading-none mb-1">{user?.nome}</h4>
-              <p className="text-xs text-premium-gold font-medium uppercase tracking-widest">{user?.tipo === 'app' ? 'Motorista APP' : 'Particular'}</p>
+              <h4 className="text-white font-bold truncate leading-none mb-1">{user?.nome || user?.name}</h4>
+              <p className="text-xs text-premium-gold font-medium uppercase tracking-widest">{user?.role === 'admin' ? 'Admin' : 'Motorista'}</p>
             </div>
           </div>
 
@@ -266,21 +266,21 @@ export function Sidebar() {
         <div className={clsx("p-4 border-t border-premium-gray/30", isCollapsed ? "px-2 items-center flex flex-col pt-4 gap-4" : "p-4")}>
           <Link to="/perfil" className={clsx("flex items-center hover:bg-premium-gray/30 rounded-app transition-all group", isCollapsed ? "p-1" : "gap-3 mb-4 p-2")}>
             <div className={clsx("rounded-full bg-premium-dark border-2 border-premium-gold flex items-center justify-center shadow-glow-sm group-hover:scale-105 transition-transform shrink-0 overflow-hidden", isCollapsed ? "w-10 h-10" : "w-10 h-10")}>
-              {user?.foto_url ? (
+              {(user?.foto_url || user?.avatar_url) ? (
                 <img 
-                  src={user.foto_url} 
+                  src={user.foto_url || user.avatar_url || ''} 
                   alt="Avatar" 
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <span className="text-premium-gold font-bold">
-                  {user?.nome?.charAt(0).toUpperCase() || 'U'}
+                  {(user?.nome || user?.name || 'U').charAt(0).toUpperCase()}
                 </span>
               )}
             </div>
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-white truncate">{user?.nome}</p>
+                <p className="text-sm font-bold text-white truncate">{user?.nome || user?.name}</p>
                 <p className="text-[10px] text-premium-gold font-bold uppercase tracking-tighter truncate">Meu Perfil</p>
               </div>
             )}

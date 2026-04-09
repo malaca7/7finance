@@ -184,7 +184,7 @@ export const useAppStore = create<AppState>()(
       updateKmRegistry: (id, data) => {
         set((state) => ({
           kmRegistries: state.kmRegistries.map(k => 
-            k.id === id ? { ...k, ...data, km_total: (data.km_final && k.km_inicial) ? data.km_final - k.km_inicial : k.km_total } : k
+            k.id === id ? { ...k, ...data } : k
           ),
         }));
         get().calculateSummary();
@@ -265,7 +265,9 @@ export const useAppStore = create<AppState>()(
         });
         
         kmRegistries.forEach(k => {
-          kmRodados += k.km_total ?? 0;
+          const kmFinal = Number(k.km_final) || 0;
+          const kmInicial = Number(k.km_inicial) || 0;
+          kmRodados += kmFinal > kmInicial ? kmFinal - kmInicial : 0;
         });
         
         const summary: DashboardSummary = {

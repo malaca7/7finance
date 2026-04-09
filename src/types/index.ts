@@ -1,22 +1,32 @@
 ﻿// User types
 export type UserStatus = 'ativo' | 'inativo' | 'bloqueado' | 'pendente' | 'problema_financeiro';
-export type UserRole = 'admin' | 'user';
+export type UserRole = 'admin' | 'user' | 'manager' | 'barber' | 'customer' | 'usuario';
 export type DriverType = 'particular' | 'app' | 'taxi';
 
+// Interface User sincronizada com banco Supabase (public.users)
+// DB columns: id(uuid), auth_id(uuid), tenant_id(uuid), phone(text), name(text),
+//             email(text), role(text), avatar_url(text), is_active(boolean),
+//             created_at(timestamptz), updated_at(timestamptz)
 export interface User {
-  id: number;
-  nome: string;
-  email: string;
-  telefone: string;
-  tipo: string | DriverType[]; // Can be a string like "app,taxi" or array
-  role: UserRole;
-  status: UserStatus;
+  id: string;
+  auth_id?: string | null;
+  tenant_id?: string | null;
+  phone?: string | null;
+  name?: string | null;
+  email?: string | null;
+  role: string;
+  avatar_url?: string | null;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  // Aliases de compatibilidade (preenchidos pelo adaptador adaptUser)
+  nome?: string;
+  telefone?: string;
+  foto_url?: string;
+  status?: string;
   veiculo?: string;
   placa?: string;
-  foto_url?: string;
-  google_id?: string;
-  criado_em: string;
-  atualizado_em?: string;
+  tipo?: string;
 }
 
 export interface AuthState {
@@ -31,12 +41,12 @@ export type EarningsType = 'corrida' | 'gorjeta' | 'dinheiro';
 
 export interface Earnings {
   id: number;
-  usuario_id: number;
+  usuario_id?: string;
   tipo: EarningsType;
   valor: number;
   descricao?: string;
   data: string;
-  criado_em: string;
+  created_at?: string;
 }
 
 // Expenses types
@@ -44,34 +54,35 @@ export type ExpenseType = 'abastecimento' | 'manutencao' | 'lavagem' | 'pedagio'
 
 export interface Expense {
   id: number;
-  usuario_id: number;
+  usuario_id?: string;
   tipo: ExpenseType;
   valor: number;
   descricao?: string;
   data: string;
-  criado_em: string;
+  created_at?: string;
 }
 
 // KM Registry types
 export interface KmRegistry {
   id: number;
-  usuario_id: number;
-  veiculo_id: number | null;
-  km_inicial: number | null;
-  km_final: number | null;
-  km_total: number | null;
+  usuario_id?: string;
+  veiculo_id?: number | null;
+  km_inicial: number;
+  km_final?: number | null;
   data: string;
-  criado_em: string;
+  observacao?: string;
+  created_at?: string;
 }
 
 export interface Veiculo {
   id: number;
-  usuario_id: number;
+  usuario_id?: string;
   modelo: string;
-  placa: string;
-  km_atual: number;
-  tipo: string;
-  criado_em: string;
+  placa?: string;
+  cor?: string;
+  ano?: number;
+  status?: string;
+  created_at?: string;
 }
 
 // Maintenance types
@@ -80,13 +91,15 @@ export type MaintenanceStatus = 'pendente' | 'urgente' | 'atrasado' | 'concluido
 
 export interface Maintenance {
   id: number;
-  usuario_id: number;
-  tipo: MaintenanceType;
-  km_limite?: number;
-  data_limite?: string;
+  usuario_id?: string;
+  veiculo_id?: number | null;
+  descricao: string;
+  valor: number;
+  km_registro?: number;
+  data: string;
+  proxima_manutencao_km?: number;
   status: MaintenanceStatus;
-  obs?: string;
-  criado_em: string;
+  created_at?: string;
 }
 
 // Dashboard summary types
@@ -125,16 +138,20 @@ export interface SmartAlert {
 }
 
 export interface AuditLog {
-  id: number;
-  usuario_id: number; // Admin who did the action
-  usuario_nome: string;
-  acao: string;
-  descricao: string;
-  data: string;
+  id: string;
+  user_id?: string;
+  tenant_id?: string;
+  action: string;
+  entity: string;
+  entity_id?: string;
+  metadata?: any;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
 }
 
 export interface TopDriver {
-  id: number;
+  id: string;
   nome: string;
   email: string;
   ganhoTotal: number;
@@ -159,7 +176,7 @@ export interface ApiResponse<T> {
 
 // Form types
 export interface LoginFormData {
-  email: string;
+  telefone: string;
   password: string;
 }
 
@@ -168,6 +185,5 @@ export interface RegisterFormData {
   email: string;
   telefone: string;
   tipo: DriverType;
-  veiculo?: string;
-  placa?: string;
+  password: string;
 }

@@ -9,23 +9,12 @@ import type { KmRegistry } from '../types';
 import { getLocalDatetimeForInput, displayLocaleDatetime } from '../utils/date';
 import toast from 'react-hot-toast';
 
-interface KmRegistro {
-  id: number;
-  usuario_id: number;
-  veiculo_id: number | null;
-  km_inicial: number | null;
-  km_final: number | null;
-  km_total: number | null;
-  data: string;
-  criado_em: string;
-}
-
 export function KmPage() {
   const { kmRegistries, addKmRegistry, updateKmRegistry, deleteKmRegistry, setKmRegistries, user } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedRegistry, setSelectedRegistry] = useState<KmRegistro | null>(null);
+  const [selectedRegistry, setSelectedRegistry] = useState<KmRegistry | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [modalMode, setModalMode] = useState<'inicio' | 'fim' | 'novo' | 'editar'>('novo');
   
@@ -73,7 +62,7 @@ export function KmPage() {
     if (veiculos.length > 0) {
       const firstVeiculo = veiculos[0];
       setSelectedVeiculoId(firstVeiculo.id.toString());
-      setKmValue(firstVeiculo.km_atual?.toString() || '');
+      setKmValue('');
     }
 
     setData(getLocalDatetimeForInput());
@@ -109,7 +98,7 @@ export function KmPage() {
     // Update kmValue with selected vehicle's current mileage if in 'inicio' mode
     if (modalMode === 'inicio') {
       const v = veiculos.find(veiculo => veiculo.id.toString() === vId);
-      if (v) setKmValue(v.km_atual?.toString() || '');
+      if (v) setKmValue('');
     }
   };
 
@@ -210,14 +199,14 @@ export function KmPage() {
           return;
         }
         
-        const response = await kmApi.update(selectedRegistry.id, { 
+        const response = await kmApi.update(selectedRegistry!.id, { 
           km_inicial: inicial, 
           km_final: final, 
           data,
-          veiculo_id: selectedRegistry.veiculo_id
+          veiculo_id: selectedRegistry!.veiculo_id
         });
         if (response.success && response.data) {
-          updateKmRegistry(selectedRegistry.id, response.data);
+          updateKmRegistry(selectedRegistry!.id, response.data);
           toast.success('Registro de KM atualizado!');
           fetchVeiculos();
         }
@@ -269,20 +258,28 @@ export function KmPage() {
   const hasInicioToday = todayReg?.km_inicial !== null && todayReg?.km_inicial !== undefined;
   const hasFimToday = todayReg?.km_final !== null && todayReg?.km_final !== undefined && todayReg.km_final > 0;
 
+  // Helper para calcular km rodado de um registro
+  const getKmTotal = (k: { km_inicial?: number | null; km_final?: number | null }): number => {
+    const ini = Number(k.km_inicial) || 0;
+    const fim = Number(k.km_final) || 0;
+    return fim > ini ? fim - ini : 0;
+  };
+
   // Calculate totals
-  const totalKm = kmRegistries.reduce((sum, k) => sum + (k.km_total || 0), 0);
-  const avgKmPerDay = kmRegistries.filter(k => k.km_total).length > 0 
-    ? Math.round(totalKm / kmRegistries.filter(k => k.km_total).length) 
+  const totalKm = kmRegistries.reduce((sum, k) => sum + getKmTotal(k), 0);
+  const registriesWithKm = kmRegistries.filter(k => getKmTotal(k) > 0);
+  const avgKmPerDay = registriesWithKm.length > 0 
+    ? Math.round(totalKm / registriesWithKm.length) 
     : 0;
   
   // Current KM (latest km_final)
   const currentKm = kmRegistries.length > 0 ? kmRegistries[0].km_final : 0;
 
   // Get last 7 days for chart
-  const last7Days = kmRegistries.filter(k => k.km_total && k.km_total > 0).slice(0, 7).reverse();
+  const last7Days = kmRegistries.filter(k => getKmTotal(k) > 0).slice(0, 7).reverse();
   const chartData = last7Days.map(k => ({
     date: displayLocaleDatetime(k.data),
-    km: k.km_total || 0,
+    km: getKmTotal(k),
   }));
 
   return (
@@ -336,7 +333,7 @@ export function KmPage() {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-400">Rodado hoje</span>
                 <span className="text-xl font-bold text-green-500">
-                  +{formatNumber(todayReg!.km_total!)} km
+                  +{formatNumber(getKmTotal(todayReg!))} km
                 </span>
               </div>
             </div>
@@ -369,11 +366,11 @@ export function KmPage() {
         </div>
 
         {/* Vehicle Info */}
-        {user?.veiculo && (
+        {(user?.veiculo) && (
           <div className="bg-premium-darkGray rounded-app p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-premium-gray rounded-full flex items-center justify-center">
-                <span className="text-premium-gold font-bold">{user.veiculo?.charAt(0)}</span>
+                <span className="text-premium-gold font-bold">{(user.veiculo || '?').charAt(0)}</span>
               </div>
               <div>
                 <p className="font-medium text-white">{user.veiculo}</p>
@@ -433,8 +430,8 @@ export function KmPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {registry.km_total ? (
-                      <span className="text-premium-gold font-medium">+{formatNumber(registry.km_total)}</span>
+                    {getKmTotal(registry) > 0 ? (
+                      <span className="text-premium-gold font-medium">+{formatNumber(getKmTotal(registry))}</span>
                     ) : (
                       <span className="text-xs text-gray-500">Pendente</span>
                     )}
@@ -530,7 +527,7 @@ export function KmPage() {
                   setSelectedVeiculoId(vId);
                   if (modalMode === 'inicio') {
                     const v = veiculos.find(veiculo => veiculo.id.toString() === vId);
-                    if (v) setKmValue(v.km_atual?.toString() || '');
+                    if (v) setKmValue('');
                   }
                 }}
                 disabled={modalMode === 'editar'}
