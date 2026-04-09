@@ -462,7 +462,7 @@ export function EarningsPage() {
       />
 
       {/* Botão de Novo Ganho Flutuante e Centralizado (Mobile) */}
-      <div className="md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-30 w-full px-4 flex justify-center">
+      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-30 w-full px-4 flex justify-center">
         <Button 
           onClick={() => openModal()} 
           className="h-14 px-8 bg-green-600 hover:bg-green-500 text-white rounded-full shadow-2xl shadow-green-900/40 border border-green-400/20 active:scale-95 transition-all w-full max-w-sm"

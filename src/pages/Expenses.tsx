@@ -476,7 +476,7 @@ export function ExpensesPage() {
       />
 
       {/* Botão de Nova Despesa Flutuante e Centralizado (Mobile) */}
-      <div className="md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-30 w-full px-4 flex justify-center text-center">
+      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-30 w-full px-4 flex justify-center text-center">
         <Button 
           onClick={() => openModal()} 
           variant="danger"
