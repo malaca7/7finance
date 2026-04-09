@@ -317,70 +317,120 @@ export function MaintenancePage() {
               <p className="text-sm mt-1">Clique em "Nova Manutenção" para começar</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-premium-gray/30">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Descrição</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Próx. KM</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Data</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {maintenances.map((maintenance) => (
-                    <tr key={maintenance.id} className="border-b border-premium-gray/20 hover:bg-premium-gray/20">
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-1 bg-premium-gold/20 text-premium-gold rounded text-sm">
-                          {maintenance.descricao || 'Manutenção'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-white">
-                        {maintenance.proxima_manutencao_km ? `${formatNumber(maintenance.proxima_manutencao_km)} km` : '-'}
-                      </td>
-                      <td className="py-3 px-4 text-gray-400">
-                        {displayLocaleDatetime(maintenance.data)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-sm ${getStatusColor(maintenance.status)}`}>
-                          {getStatusIcon(maintenance.status)}
-                          {maintenance.status.charAt(0).toUpperCase() + maintenance.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex justify-end gap-2">
-                          {maintenance.status !== 'concluido' && (
-                            <button
-                              onClick={() => handleMarkComplete(maintenance.id)}
-                              className="p-2 text-gray-400 hover:text-green-500 hover:bg-green-500/10 rounded-premium transition-colors"
-                              title="Marcar como concluído"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => openModal(maintenance)}
-                            className="p-2 text-gray-400 hover:text-white hover:bg-premium-gray rounded-premium transition-colors"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDeleteId(maintenance.id);
-                              setIsDeleteModalOpen(true);
-                            }}
-                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-premium transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-premium-gray/30">
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Descrição</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Próx. KM</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Data</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Ações</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {maintenances.map((maintenance) => (
+                      <tr key={maintenance.id} className="border-b border-premium-gray/20 hover:bg-premium-gray/20">
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-1 bg-premium-gold/20 text-premium-gold rounded text-sm">
+                            {maintenance.descricao || 'Manutenção'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-white">
+                          {maintenance.proxima_manutencao_km ? `${formatNumber(maintenance.proxima_manutencao_km)} km` : '-'}
+                        </td>
+                        <td className="py-3 px-4 text-gray-400">
+                          {displayLocaleDatetime(maintenance.data)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-sm ${getStatusColor(maintenance.status)}`}>
+                            {getStatusIcon(maintenance.status)}
+                            {maintenance.status.charAt(0).toUpperCase() + maintenance.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex justify-end gap-2">
+                            {maintenance.status !== 'concluido' && (
+                              <button
+                                onClick={() => handleMarkComplete(maintenance.id)}
+                                className="p-2 text-gray-400 hover:text-green-500 hover:bg-green-500/10 rounded-premium transition-colors"
+                                title="Marcar como concluído"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => openModal(maintenance)}
+                              className="p-2 text-gray-400 hover:text-white hover:bg-premium-gray rounded-premium transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDeleteId(maintenance.id);
+                                setIsDeleteModalOpen(true);
+                              }}
+                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-premium transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-premium-gray/20">
+                {maintenances.map((maintenance) => (
+                  <div key={maintenance.id} className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="px-2 py-0.5 bg-premium-gold/20 text-premium-gold rounded text-xs font-medium">
+                        {maintenance.descricao || 'Manutenção'}
+                      </span>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs ${getStatusColor(maintenance.status)}`}>
+                        {getStatusIcon(maintenance.status)}
+                        {maintenance.status.charAt(0).toUpperCase() + maintenance.status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-400">{displayLocaleDatetime(maintenance.data)}</p>
+                        {maintenance.proxima_manutencao_km && (
+                          <p className="text-xs text-gray-500">Próx: {formatNumber(maintenance.proxima_manutencao_km)} km</p>
+                        )}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        {maintenance.status !== 'concluido' && (
+                          <button
+                            onClick={() => handleMarkComplete(maintenance.id)}
+                            className="p-2 text-gray-400 hover:text-green-500 hover:bg-green-500/10 rounded-lg transition-colors"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openModal(maintenance)}
+                          className="p-2 text-gray-400 hover:text-white hover:bg-premium-gray rounded-lg transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => { setDeleteId(maintenance.id); setIsDeleteModalOpen(true); }}
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </Card>
       </div>

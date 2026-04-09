@@ -292,58 +292,93 @@ export function EarningsPage() {
               <p className="text-sm mt-1">Clique em "Novo Ganho" para começar</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-premium-gray/30">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Tipo</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Valor</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Descrição</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Data</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {earnings.map((earning) => (
-                    <tr key={earning.id} className="border-b border-premium-gray/20 hover:bg-premium-gray/20">
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-1 bg-premium-gold/20 text-premium-gold rounded text-sm">
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-premium-gray/30">
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Tipo</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Valor</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Descrição</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Data</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {earnings.map((earning) => (
+                      <tr key={earning.id} className="border-b border-premium-gray/20 hover:bg-premium-gray/20">
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-1 bg-premium-gold/20 text-premium-gold rounded text-sm">
+                            {getTypeLabel(earning.tipo)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-white font-medium">
+                          {formatCurrency(earning.valor)}
+                        </td>
+                        <td className="py-3 px-4 text-gray-400">
+                          {earning.descricao || '-'}
+                        </td>
+                        <td className="py-3 px-4 text-gray-400">
+                          {displayLocaleDatetime(earning.data)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => openModal(earning)}
+                              className="p-2 text-gray-400 hover:text-white hover:bg-premium-gray rounded-premium transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDeleteId(earning.id);
+                                setIsDeleteModalOpen(true);
+                              }}
+                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-premium transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-premium-gray/20">
+                {earnings.map((earning) => (
+                  <div key={earning.id} className="p-4 flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="px-2 py-0.5 bg-premium-gold/20 text-premium-gold rounded text-xs font-medium">
                           {getTypeLabel(earning.tipo)}
                         </span>
-                      </td>
-                      <td className="py-3 px-4 text-white font-medium">
-                        {formatCurrency(earning.valor)}
-                      </td>
-                      <td className="py-3 px-4 text-gray-400">
-                        {earning.descricao || '-'}
-                      </td>
-                      <td className="py-3 px-4 text-gray-400">
-                        {displayLocaleDatetime(earning.data)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => openModal(earning)}
-                            className="p-2 text-gray-400 hover:text-white hover:bg-premium-gray rounded-premium transition-colors"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDeleteId(earning.id);
-                              setIsDeleteModalOpen(true);
-                            }}
-                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-premium transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        <span className="text-xs text-gray-500">{displayLocaleDatetime(earning.data)}</span>
+                      </div>
+                      <p className="text-white font-bold">{formatCurrency(earning.valor)}</p>
+                      {earning.descricao && <p className="text-xs text-gray-500 truncate">{earning.descricao}</p>}
+                    </div>
+                    <div className="flex gap-1 ml-2 shrink-0">
+                      <button
+                        onClick={() => openModal(earning)}
+                        className="p-2 text-gray-400 hover:text-white hover:bg-premium-gray rounded-lg transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => { setDeleteId(earning.id); setIsDeleteModalOpen(true); }}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </Card>
       </div>
