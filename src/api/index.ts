@@ -376,8 +376,52 @@ export const dashboardApi = {
 };
 
 export const adminApi = {
-  async getDashboardData() {
-    return dashboardApi.getAdminDashboardData();
+  async getDashboardData(): Promise<ApiResponse<any>> {
+    try {
+      const { data, error } = await supabase.rpc('admin_dashboard_data');
+      if (error) throw error;
+      
+      // A função retorna jsonb com a estrutura completa AdminDashboardData
+      const dashboard = data as any;
+      
+      return {
+        success: true,
+        data: {
+          stats: {
+            totalUsuarios: dashboard.stats?.totalUsuarios ?? 0,
+            usuariosAtivos: dashboard.stats?.usuariosAtivos ?? 0,
+            novosUsuarios7Dias: dashboard.stats?.novosUsuarios7Dias ?? 0,
+            totalGanhosGlobal: Number(dashboard.stats?.totalGanhosGlobal ?? 0),
+            totalDespesasGlobal: Number(dashboard.stats?.totalDespesasGlobal ?? 0),
+            lucroMedioPorMotorista: Number(dashboard.stats?.lucroMedioPorMotorista ?? 0),
+            receitaPlataforma: Number(dashboard.stats?.receitaPlataforma ?? 0),
+            ticketMedioPorCorrida: Number(dashboard.stats?.ticketMedioPorCorrida ?? 0),
+            percentualBaixoLucro: Number(dashboard.stats?.percentualBaixoLucro ?? 0),
+            usuariosInativos: dashboard.stats?.usuariosInativos ?? 0,
+          },
+          alerts: dashboard.alerts ?? [],
+          topDrivers: (dashboard.topDrivers ?? []).map((d: any) => ({
+            id: d.id,
+            nome: d.nome || 'Sem nome',
+            email: d.email || '',
+            ganhoTotal: Number(d.ganho_total ?? 0),
+            lucroLiquido: Number(d.lucro_liquido ?? 0),
+          })),
+          graficoCrescimento: (dashboard.graficoCrescimento ?? []).map((g: any) => ({
+            data: g.data,
+            usuarios: Number(g.usuarios ?? 0),
+            receita: Number(g.receita ?? 0),
+          })),
+          distribuicaoDespesas: (dashboard.distribuicaoDespesas ?? []).map((d: any) => ({
+            name: d.name || 'Outros',
+            value: Number(d.value ?? 0),
+          })),
+        }
+      };
+    } catch (e: any) {
+      console.error('Admin dashboard error:', e);
+      return { success: false, error: e.message || 'Erro ao buscar dados do painel admin' };
+    }
   }
 };
 
