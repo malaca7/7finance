@@ -160,8 +160,8 @@ export function KmPage() {
         }
       } else if (modalMode === 'fim') {
         const kmFim = parseFloat(kmFinalValue);
-        if (isNaN(kmFim) || kmFim <= km) {
-          alert('KM final deve ser maior que KM inicial');
+        if (isNaN(kmFim)) {
+          alert('Digite um valor de KM final válido');
           setIsLoading(false);
           return;
         }
