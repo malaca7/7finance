@@ -123,9 +123,16 @@ export function KmPage() {
     
     setIsLoading(true);
 
+    // Corrigir formato da data para ISO completo (YYYY-MM-DDTHH:mm:ss)
+    function toIsoWithSeconds(dt: string) {
+      // dt: '2026-04-09T09:00' => '2026-04-09T09:00:00'
+      return dt.length === 16 ? dt + ':00' : dt;
+    }
+    const dataIso = toIsoWithSeconds(data);
+
     try {
       if (modalMode === 'inicio') {
-        const inputDateOnly = data.split('T')[0];
+        const inputDateOnly = dataIso.split('T')[0];
         // Check duplication for THIS vehicle and THIS user in THAT day
         const existingRegInDay = kmRegistries.find(r => 
           r.data.split('T')[0] === inputDateOnly && 
@@ -141,7 +148,7 @@ export function KmPage() {
         const response = await kmApi.create({ 
           km_inicial: km, 
           km_final: 0, 
-          data, 
+          data: dataIso, 
           veiculo_id: Number(selectedVeiculoId) 
         });
         if (response.success && response.data) {
@@ -162,7 +169,7 @@ export function KmPage() {
           // Update existing record
           const response = await kmApi.update(selectedRegistry.id, { 
             km_final: kmFim, 
-            data,
+            data: dataIso,
             veiculo_id: selectedRegistry.veiculo_id 
           });
           if (response.success && response.data) {
@@ -172,7 +179,7 @@ export function KmPage() {
           }
         } else {
           // Create new record with both values
-          const inputDateOnly = data.split('T')[0];
+          const inputDateOnly = dataIso.split('T')[0];
           const existingRegInDay = kmRegistries.find(r => r.data.split('T')[0] === inputDateOnly);
           
           if (existingRegInDay) {
@@ -184,8 +191,8 @@ export function KmPage() {
           const response = await kmApi.create({ 
             km_inicial: km, 
             km_final: kmFim, 
-            data,
-            veiculo_id: Number(selectedVeiculoId)
+            data: dataIso, 
+            veiculo_id: Number(selectedVeiculoId) 
           });
           if (response.success && response.data) {
             addKmRegistry(response.data);
