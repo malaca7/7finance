@@ -300,35 +300,7 @@ export function Sidebar() {
         </div>
       </aside>
 
-      {/* Bottom Tab Bar - Mobile Only */}
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-premium-dark border-t border-premium-gray/30 flex items-center justify-around px-2 pb-safe pt-2 z-40">
-        {[...personalMenuItems.slice(0, 4), { path: '/perfil', label: 'Eu', icon: UserIcon }].map((item) => {
-          const isActive = location.pathname === item.path;
-          const Icon = item.icon;
-
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={clsx(
-                'flex flex-col items-center justify-center w-16 h-14 rounded-lg',
-                isActive ? 'text-premium-gold' : 'text-gray-400 hover:text-gray-300'
-              )}
-            >
-              <Icon className={clsx('w-6 h-6 mb-1 transition-transform', isActive && 'scale-110')} />
-              <span className="text-[10px] font-medium leading-none">{item.label}</span>
-            </Link>
-          );
-        })}
-        {/* Botão de Sair Mobile */}
-        <button
-          onClick={handleLogout}
-          className="flex flex-col items-center justify-center w-16 h-14 rounded-lg text-red-500/80 hover:text-red-400"
-        >
-          <LogOut className="w-6 h-6 mb-1" />
-          <span className="text-[10px] font-medium leading-none">Sair</span>
-        </button>
-      </nav>
+      {/* Bottom Tab Bar removida - navegação apenas pela sidebar lateral */}
     </>
   );
 }
