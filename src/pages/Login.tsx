@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Phone, CarFront } from 'lucide-react';
+import { Mail, Lock, User, Phone } from 'lucide-react';
 import { Button, Input } from '../components/ui';
 import { useAppStore } from '../store';
 import { authApi } from '../api';
@@ -21,9 +21,8 @@ export function LoginPage() {
   
   // Register form
   const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
   const [tipos, setTipos] = useState<DriverType[]>(['app']); // Multiple selection state
-  const [veiculo, setVeiculo] = useState('');
-  const [placa, setPlaca] = useState('');
 
   const toggleTipo = (tipo: DriverType) => {
     setTipos(prev => 
@@ -81,10 +80,9 @@ export function LoginPage() {
       const response = await authApi.register({
         nome,
         telefone,
+        email,
         tipo: tipos.join(','), // Envia como string separada por vírgula
         password,
-        veiculo,
-        placa,
       });
       
       if (response.success && response.data) {
@@ -201,6 +199,17 @@ export function LoginPage() {
               />
 
               <Input
+                label="E-mail"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seuemail@exemplo.com"
+                required
+                className="bg-black/40 border-premium-gold/10"
+                icon={<Mail className="w-4 h-4 text-premium-gold/60" />}
+              />
+
+              <Input
                 label="Telefone / Login"
                 type="text"
                 value={telefone}
@@ -239,27 +248,6 @@ export function LoginPage() {
                     </button>
                   ))}
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Veículo"
-                  type="text"
-                  value={veiculo}
-                  onChange={(e) => setVeiculo(e.target.value)}
-                  placeholder="Modelo"
-                  className="bg-black/40 border-premium-gold/10 text-sm"
-                  icon={<CarFront className="w-4 h-4 text-premium-gold/60" />}
-                />
-                <Input
-                  label="Placa"
-                  type="text"
-                  value={placa}
-                  onChange={(e) => setPlaca(e.target.value.toUpperCase())}
-                  placeholder="ABC-1234"
-                  className="bg-black/40 border-premium-gold/10 text-sm"
-                  icon={<Lock className="w-4 h-4 text-premium-gold/60" />}
-                />
               </div>
 
               <Input

@@ -45,12 +45,9 @@ export const authApi = {
 
   async register(userData: any): Promise<ApiResponse<{ user: User; token: string }>> {
     try {
-      const phone = userData.telefone.replace(/\D/g, '');
-      const email = `${phone}@7finance.com`;
-      
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password: userData.senha_hash,
+        email: userData.email,
+        password: userData.password,
       });
 
       if (authError) return { success: false, error: authError.message };
@@ -58,6 +55,7 @@ export const authApi = {
       const newUser = {
         nome: userData.nome,
         telefone: userData.telefone,
+        email: userData.email,
         auth_id: authData.user?.id,
         role: 'user',
         status: 'ativo'
