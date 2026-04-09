@@ -229,7 +229,7 @@ export const veiculosApi = {
 
 export const kmApi = {
   async getAll() { 
-    const { data, error } = await supabase.from('km_registry').select('*').order('data', { ascending: false });
+    const { data, error } = await supabase.from('km_registry').select('*, veiculos(id, modelo, placa)').order('data', { ascending: false });
     return apiResponse<KmRegistry[]>(data, error);
   },
   async create(data: any) { 

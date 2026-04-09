@@ -72,6 +72,8 @@ export interface KmRegistry {
   data: string;
   observacao?: string;
   created_at?: string;
+  // Join data from veiculos table
+  veiculos?: { id: number; modelo: string; placa?: string } | null;
 }
 
 export interface Veiculo {

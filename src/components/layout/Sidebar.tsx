@@ -8,7 +8,6 @@ import {
   Users,
   Shield,
   LogOut,
-  X,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
@@ -26,7 +25,6 @@ const personalMenuItems = [
   { path: '/manutencao', label: 'Carro', icon: Wrench },
   { path: '/perfil', label: 'Perfil', icon: UserIcon },
 ];
-
 const adminMenuItems = [
   { path: '/admin', label: 'Admin', icon: Users },
 ];
@@ -35,7 +33,6 @@ export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAppStore();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isPersonalOpen, setIsPersonalOpen] = useState(true);
   const [isAdminOpen, setIsAdminOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -43,175 +40,164 @@ export function Sidebar() {
   });
 
   const isAdmin = user?.role === 'admin';
-
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
-
   const toggleSidebar = () => {
     const newState = !isCollapsed;
     setIsCollapsed(newState);
     localStorage.setItem('sidebar_collapsed', String(newState));
-    // Disparar evento customizado para os componentes que dependem da largura
     window.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { isCollapsed: newState } }));
   };
 
   return (
     <>
-      {/* Top Bar - Mobile Only */}
-      <header className="lg:hidden fixed top-0 left-0 w-full h-16 bg-premium-black/80 backdrop-blur-md border-b border-premium-gold/10 z-50 flex items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <img 
-            src="https://i.postimg.cc/gY9KR36Q/Chat-GPT-Image-7-de-abr-de-2026-13-14-27.png" 
-            alt="7 Finance" 
-            className="h-10 w-auto drop-shadow-glow-sm"
-          />
-          <span className="text-white font-bold tracking-tighter text-lg italic">7<span className="text-premium-gold">FINANCE</span></span>
-        </div>
-        <button
-          className="p-2 bg-premium-gold/10 rounded-full border border-premium-gold/20 text-premium-gold transition-all active:scale-90"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <LayoutDashboard className="w-5 h-5" />}
-        </button>
-      </header>
-
-      {/* Mobile Menu Overlay */}
-      <div className={clsx(
-        "lg:hidden fixed inset-0 z-40 bg-premium-black/95 backdrop-blur-lg transition-transform duration-500 ease-in-out",
-        isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-      )}>
-        <div className="flex flex-col h-full pt-20 p-6">
-          {/* User Info Mobile */}
-          <div className="flex items-center gap-4 mb-8 p-4 bg-white/5 rounded-2xl border border-white/5">
-            <div className="w-12 h-12 rounded-full bg-premium-dark border-2 border-premium-gold flex items-center justify-center shadow-glow-sm overflow-hidden">
-              {(user?.foto_url || user?.avatar_url) ? (
-                <img 
-                  src={user.foto_url || user.avatar_url || ''} 
-                  alt="Avatar" 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-premium-gold font-extrabold text-xl">
-                  {(user?.nome || user?.name || 'U').charAt(0).toUpperCase()}
-                </span>
+      {/* Bottom Tab Bar - Mobile Only */}
+      <nav className="lg:hidden fixed bottom-0 left-0 w-full h-16 bg-premium-black/95 border-t border-premium-gold/10 z-50 flex justify-around items-center px-1">
+        {personalMenuItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={clsx(
+                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all",
+                isActive ? "text-premium-gold" : "text-gray-400 hover:text-premium-gold/80"
               )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-white font-bold truncate leading-none mb-1">{user?.nome || user?.name}</h4>
-              <p className="text-xs text-premium-gold font-medium uppercase tracking-widest">{user?.role === 'admin' ? 'Admin' : 'Motorista'}</p>
-            </div>
-          </div>
-
-          {/* Nav Links Mobile */}
-          <div className="flex-1 space-y-2 overflow-y-auto">
-            {personalMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={clsx(
-                    "flex items-center gap-4 p-4 rounded-xl transition-all border",
-                    isActive 
-                      ? "bg-premium-gold/20 border-premium-gold/30 text-premium-gold shadow-glow-sm translate-x-2" 
-                      : "bg-white/5 border-transparent text-gray-400"
-                  )}
-                >
-                  <Icon className={clsx("w-5 h-5", isActive ? "animate-pulse" : "")} />
-                  <span className="font-bold tracking-wide">{item.label}</span>
-                </Link>
-              );
-            })}
-            
-            {isAdmin && adminMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={clsx(
-                    "flex items-center gap-4 p-4 rounded-xl transition-all border mt-4",
-                    isActive 
-                      ? "bg-blue-500/20 border-blue-500/30 text-blue-400 shadow-blue-500/10 translate-x-2" 
-                      : "bg-blue-500/5 border-blue-500/10 text-blue-300/60"
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-bold tracking-wide">Administração</span>
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Logout Mobile */}
-          <button
-            onClick={handleLogout}
-            className="mt-6 flex items-center justify-center gap-3 w-full py-4 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 transition-all border border-red-500/20 font-bold"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Encerrar Sessão</span>
-          </button>
-        </div>
-      </div>
-      {/* Desktop Sidebar */}
-      <aside className={clsx(
-        "hidden lg:flex sticky top-0 h-screen bg-premium-black border-r border-premium-gray/30 flex-col z-40 transition-all duration-300 ease-in-out shrink-0",
-        isCollapsed ? "w-20" : "w-64"
-      )}>
-        {/* Toggle Button Desktop */}
+              style={{ fontSize: 12 }}
+            >
+              <Icon className={clsx("w-6 h-6 mb-0.5", isActive ? "scale-110" : "")}/>
+              <span className="text-xs font-bold leading-none">{item.label}</span>
+            </Link>
+          );
+        })}
+        {isAdmin && adminMenuItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={clsx(
+                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all",
+                isActive ? "text-blue-400" : "text-blue-300/60 hover:text-blue-400"
+              )}
+              style={{ fontSize: 12 }}
+            >
+              <Icon className={clsx("w-6 h-6 mb-0.5", isActive ? "scale-110" : "")}/>
+              <span className="text-xs font-bold leading-none">Admin</span>
+            </Link>
+          );
+        })}
+        {/* Logout botão */}
         <button
-          onClick={toggleSidebar}
-          className="absolute -right-3 top-20 bg-premium-gold text-premium-black rounded-full p-1 shadow-glow hover:scale-110 transition-transform z-50"
+          onClick={handleLogout}
+          className="flex flex-col items-center justify-center flex-1 h-full gap-1 text-red-500 hover:text-red-400 transition-all"
+          style={{ fontSize: 12 }}
         >
-          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          <LogOut className="w-6 h-6 mb-0.5" />
+          <span className="text-xs font-bold leading-none">Sair</span>
         </button>
+      </nav>
+        {/* Desktop Sidebar */}
+        <aside className={clsx(
+          "hidden lg:flex sticky top-0 h-screen bg-premium-black border-r border-premium-gray/30 flex-col z-40 transition-all duration-300 ease-in-out shrink-0",
+          const adminMenuItems = [
+            { path: '/admin', label: 'Admin', icon: Users },
+          ];
 
-        {/* Logo */}
-        <div className={clsx("p-6 border-b border-premium-gray/30 flex flex-col items-center", isCollapsed ? "px-2" : "p-6")}>
-          <img 
-            src="https://i.postimg.cc/gY9KR36Q/Chat-GPT-Image-7-de-abr-de-2026-13-14-27.png" 
-            alt="7 Finance Logo" 
-            className={clsx("w-auto drop-shadow-glow transition-all", isCollapsed ? "h-10" : "h-16")}
-          />
-          {!isCollapsed && <p className="text-xs text-center text-gray-500 mt-2 uppercase tracking-wider font-medium">Gestão Profissional</p>}
-        </div>
+          export function Sidebar() {
+            const location = useLocation();
+            const navigate = useNavigate();
+            const { user, logout } = useAppStore();
+            const [isPersonalOpen, setIsPersonalOpen] = useState(true);
+            const [isAdminOpen, setIsAdminOpen] = useState(true);
+            const [isCollapsed, setIsCollapsed] = useState(() => {
+              return localStorage.getItem('sidebar_collapsed') === 'true';
+            });
 
-        {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-4 overflow-y-auto custom-scrollbar">
-          {/* Categoria Pessoal */}
-          <div className="space-y-1">
-            {!isCollapsed && (
-              <button 
-                onClick={() => setIsPersonalOpen(!isPersonalOpen)}
-                className="w-full flex items-center justify-between px-3 mb-2 group outline-none"
-              >
-                <h3 className="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em]">Pessoal</h3>
-                {isPersonalOpen ? <ChevronDown className="w-3 h-3 text-gray-600" /> : <ChevronRight className="w-3 h-3 text-gray-600" />}
-              </button>
-            )}
-            
-            {(isCollapsed || isPersonalOpen) && personalMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              const Icon = item.icon;
+            const isAdmin = user?.role === 'admin';
+            const handleLogout = () => {
+              logout();
+              navigate('/login');
+            };
+            const toggleSidebar = () => {
+              const newState = !isCollapsed;
+              setIsCollapsed(newState);
+              localStorage.setItem('sidebar_collapsed', String(newState));
+              window.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { isCollapsed: newState } }));
+            };
 
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  title={isCollapsed ? item.label : ""}
-                  className={clsx(
-                    'flex items-center rounded-lg transition-all duration-200 border border-transparent',
-                    isCollapsed ? "justify-center p-3 mb-2" : "gap-2.5 px-3 py-2",
-                    isActive
-                      ? 'bg-premium-gold/10 text-premium-gold font-bold border-premium-gold/20 shadow-glow-sm'
-                      : 'text-gray-400 hover:bg-premium-gray/50 hover:text-white'
-                  )}
+            return (
+              <>
+                {/* Bottom Tab Bar - Mobile Only */}
+                <nav className="lg:hidden fixed bottom-0 left-0 w-full h-16 bg-premium-black/95 border-t border-premium-gold/10 z-50 flex justify-around items-center px-1">
+                  {personalMenuItems.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className={clsx(
+                          "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all",
+                          isActive ? "text-premium-gold" : "text-gray-400 hover:text-premium-gold/80"
+                        )}
+                        style={{ fontSize: 12 }}
+                      >
+                        <Icon className={clsx("w-6 h-6 mb-0.5", isActive ? "scale-110" : "")}/>
+                        <span className="text-xs font-bold leading-none">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                  {isAdmin && adminMenuItems.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className={clsx(
+                          "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all",
+                          isActive ? "text-blue-400" : "text-blue-300/60 hover:text-blue-400"
+                        )}
+                        style={{ fontSize: 12 }}
+                      >
+                        <Icon className={clsx("w-6 h-6 mb-0.5", isActive ? "scale-110" : "")}/>
+                        <span className="text-xs font-bold leading-none">Admin</span>
+                      </Link>
+                    );
+                  })}
+                  {/* Logout botão */}
+                  <button
+                    onClick={handleLogout}
+                    className="flex flex-col items-center justify-center flex-1 h-full gap-1 text-red-500 hover:text-red-400 transition-all"
+                    style={{ fontSize: 12 }}
+                  >
+                    <LogOut className="w-6 h-6 mb-0.5" />
+                    <span className="text-xs font-bold leading-none">Sair</span>
+                  </button>
+                </nav>
+                {/* Desktop Sidebar */}
+                <aside className={clsx(
+                  "hidden lg:flex sticky top-0 h-screen bg-premium-black border-r border-premium-gray/30 flex-col z-40 transition-all duration-300 ease-in-out shrink-0",
+                  isCollapsed ? "w-20" : "w-64"
+                )}>
+                  {/* Toggle Button Desktop */}
+                  <button
+                    onClick={toggleSidebar}
+                    className="absolute -right-3 top-20 bg-premium-gold text-premium-black rounded-full p-1 shadow-glow hover:scale-110 transition-transform z-50"
+                  >
+                    {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                  </button>
+
+                  {/* Logo */}
+                  <div className={clsx("p-6 border-b border-premium-gray/30 flex flex-col items-center", isCollapsed ? "px-2" : "p-6")}>...
+              </>
+            );
+          }
                 >
                   <Icon className={clsx("transition-all", isCollapsed ? "w-6 h-6" : "w-4 h-4")} />
                   {!isCollapsed && <span className="text-xs">{item.label}</span>}
@@ -300,7 +286,7 @@ export function Sidebar() {
         </div>
       </aside>
 
-      {/* Bottom Tab Bar removida - navegação apenas pela sidebar lateral */}
+      {/* Bottom Tab Bar mobile já implementada acima */}
     </>
   );
 }

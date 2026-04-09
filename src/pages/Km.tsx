@@ -19,7 +19,11 @@ export function KmPage() {
   const [modalMode, setModalMode] = useState<'inicio' | 'fim' | 'novo' | 'editar'>('novo');
   
   const [veiculos, setVeiculos] = useState<any[]>([]);
-  const [selectedVeiculoId, setSelectedVeiculoId] = useState('');
+  const [selectedVeiculoId, setSelectedVeiculoId] = useState('all');
+  // Filtro de histórico por veículo
+  const filteredKmRegistries = selectedVeiculoId === 'all'
+    ? kmRegistries
+    : kmRegistries.filter(k => (k.veiculo_id ? String(k.veiculo_id) : '') === selectedVeiculoId);
 
   // Form state
   const [kmValue, setKmValue] = useState('');
@@ -35,8 +39,9 @@ export function KmPage() {
     const response = await veiculosApi.getAll();
     if (response.success && response.data) {
       setVeiculos(response.data);
-      if (response.data.length > 0) {
-        setSelectedVeiculoId(response.data[0].id.toString());
+      // Se não houver filtro, default para 'all'
+      if (response.data.length > 0 && selectedVeiculoId === '') {
+        setSelectedVeiculoId('all');
       }
     }
   };
@@ -287,12 +292,26 @@ export function KmPage() {
   return (
     <MainLayout>
       <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 bg-premium-darkGray rounded-app">
+        {/* Header + Filtro de veículo */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 bg-premium-darkGray rounded-app">
           <div>
             <h1 className="text-xl font-bold text-white">Quilometragem</h1>
-            <p className="text-sm text-gray-400">Controle do veículo</p>
+            <p className="text-sm text-gray-400">Controle de KM por veículo</p>
           </div>
+          {veiculos.length > 0 && (
+            <select
+              value={selectedVeiculoId}
+              onChange={e => setSelectedVeiculoId(e.target.value)}
+              className="bg-premium-dark border border-premium-gray/50 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-premium-gold transition-all"
+            >
+              <option value="all">Todos os Carros</option>
+              {veiculos.map(v => (
+                <option key={v.id} value={v.id.toString()}>
+                  {v.modelo}{v.placa ? ` (${v.placa})` : ''}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Today's Status - App Style */}
@@ -407,8 +426,7 @@ export function KmPage() {
           <div className="p-4 border-b border-premium-gray/30">
             <h3 className="font-medium text-white">Histórico</h3>
           </div>
-          
-          {kmRegistries.length === 0 ? (
+          {filteredKmRegistries.length === 0 ? (
             <div className="p-8 text-center">
               <Gauge className="w-10 h-10 mx-auto mb-3 text-gray-600" />
               <p className="text-gray-400">Nenhum registro</p>
@@ -416,31 +434,40 @@ export function KmPage() {
             </div>
           ) : (
             <div className="divide-y divide-premium-gray/20">
-              {kmRegistries.slice(0, 15).map((registry) => (
-                <button
-                  key={registry.id}
-                  onClick={() => openModalEdit(registry as any)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-premium-gray/30 transition-colors text-left"
-                >
-                  <div>
-                    <p className="font-medium text-white">{displayLocaleDatetime(registry.data)}</p>
-                    <p className="text-sm text-gray-400">
-                      {registry.km_inicial 
-                        ? `${formatNumber(registry.km_inicial)} → ${registry.km_final ? formatNumber(registry.km_final) : '...'}`
-                        : 'Aguardando início'
-                      }
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getKmTotal(registry) > 0 ? (
-                      <span className="text-premium-gold font-medium">+{formatNumber(getKmTotal(registry))}</span>
-                    ) : (
-                      <span className="text-xs text-gray-500">Pendente</span>
-                    )}
-                    <ChevronRight className="w-4 h-4 text-gray-500" />
-                  </div>
-                </button>
-              ))}
+              {filteredKmRegistries.slice(0, 15).map((registry) => {
+                const veiculo = registry.veiculos || veiculos.find(v => v.id === registry.veiculo_id);
+                return (
+                  <button
+                    key={registry.id}
+                    onClick={() => openModalEdit(registry as any)}
+                    className="w-full p-4 flex items-center justify-between hover:bg-premium-gray/30 transition-colors text-left"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Car className="w-4 h-4 text-blue-400" />
+                        <span className="text-xs text-blue-400 font-medium">
+                          {veiculo ? `${veiculo.modelo}${veiculo.placa ? ` (${veiculo.placa})` : ''}` : 'Veículo' }
+                        </span>
+                      </div>
+                      <p className="font-medium text-white">{displayLocaleDatetime(registry.data)}</p>
+                      <p className="text-sm text-gray-400">
+                        {registry.km_inicial 
+                          ? `${formatNumber(registry.km_inicial)} → ${registry.km_final ? formatNumber(registry.km_final) : '...'}`
+                          : 'Aguardando início'
+                        }
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getKmTotal(registry) > 0 ? (
+                        <span className="text-premium-gold font-medium">+{formatNumber(getKmTotal(registry))}</span>
+                      ) : (
+                        <span className="text-xs text-gray-500">Pendente</span>
+                      )}
+                      <ChevronRight className="w-4 h-4 text-gray-500" />
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
