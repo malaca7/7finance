@@ -317,22 +317,15 @@ export function ExpensesPage() {
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Descrição</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Data</th>
                       <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {expenses.map((expense) => (
-                      <tr key={expense.id} className="border-b border-premium-gray/20 hover:bg-premium-gray/20">
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-sm">
-                            {getTypeLabel(expense.tipo)}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-white font-medium">
-                          {formatCurrency(expense.valor)}
-                        </td>
-                        <td className="py-3 px-4 text-gray-400">
-                          {expense.descricao || '-'}
-                        </td>
+                    <Button 
+                      onClick={() => openModal()} 
+                      variant="primary"
+                      className="h-14 px-6 flex items-center gap-2 group font-bold text-lg"
+                    >
+                      <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                      <span>NOVA DESPESA</span>
+                    </Button>
+                  </div>
                         <td className="py-3 px-4 text-gray-400">
                           {displayLocaleDatetime(expense.data)}
                         </td>
