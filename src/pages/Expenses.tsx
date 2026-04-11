@@ -319,9 +319,13 @@ export function ExpensesPage() {
                       <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Ações</th>
                     </tr>
                   </thead>
-                        <td className="py-3 px-4 text-gray-400">
-                          {displayLocaleDatetime(expense.data)}
-                        </td>
+                  <tbody>
+                    {expenses.map((expense) => (
+                      <tr key={expense.id} className="border-b border-premium-gray/20 hover:bg-premium-gray/20">
+                        <td className="py-3 px-4 text-red-400 font-medium">{getTypeLabel(expense.tipo)}</td>
+                        <td className="py-3 px-4 text-white font-medium">{formatCurrency(expense.valor)}</td>
+                        <td className="py-3 px-4 text-gray-400">{expense.descricao}</td>
+                        <td className="py-3 px-4 text-gray-400">{displayLocaleDatetime(expense.data)}</td>
                         <td className="py-3 px-4">
                           <div className="flex justify-end gap-2">
                             <button
