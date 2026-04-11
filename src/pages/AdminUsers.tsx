@@ -247,7 +247,30 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
     setIsResettingPassword(true);
     try {
+      const targetUser = allUsers.find(u => u.id === userIdToReset);
       const res = await usersApi.resetPassword(userIdToReset, resetType === 'manual' ? manualPassword : undefined);
+      if (res.success && res.data) {
+        setIsResetModalOpen(false);
+        setGeneratedPassword({
+          password: res.data.newPassword,
+          email: targetUser?.email || targetUser?.phone || 'N/A',
+          name: targetUser?.nome || targetUser?.name || 'N/A'
+        });
+        
+        // Também atualiza o estado de visualização na tabela se o admin quiser ver lá também
+        setVisiblePasswords(prev => ({ ...prev, [userIdToReset]: res.data!.newPassword }));
+        
+        toast.success('Senha redefinida com sucesso!');
+        setManualPassword('');
+      } else {
+        toast.error(res.error || 'Erro ao redefinir senha');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro inesperado');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
       if (res.success && res.data) {
         setGeneratedPassword({
           password: res.data.newPassword,
@@ -441,10 +464,30 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                               </button>
                               <button
                                 onClick={() => {
-                                  navigator.clipboard.writeText(visiblePasswords[user.id]);
-                                  setCopiedId(user.id);
-                                  toast.success('Copiado!');
-                                  setTimeout(() => setCopiedId(null), 2000);
+                                  const pass = visiblePasswords[user.id];
+                                  if (navigator.clipboard) {
+                                    navigator.clipboard.writeText(pass)
+                                      .then(() => {
+                                        setCopiedId(user.id);
+                                        toast.success('Copiado!');
+                                        setTimeout(() => setCopiedId(null), 2000);
+                                      })
+                                      .catch(() => toast.error('Erro ao copiar'));
+                                  } else {
+                                    const textArea = document.createElement("textarea");
+                                    textArea.value = pass;
+                                    document.body.appendChild(textArea);
+                                    textArea.select();
+                                    try {
+                                      document.execCommand('copy');
+                                      setCopiedId(user.id);
+                                      toast.success('Copiado!');
+                                      setTimeout(() => setCopiedId(null), 2000);
+                                    } catch (err) {
+                                      toast.error('Erro ao copiar');
+                                    }
+                                    document.body.removeChild(textArea);
+                                  }
                                 }}
                                 className="p-1.5 rounded-lg text-neutral hover:text-white hover:bg-white/5 transition-all outline-none"
                                 title="Copiar senha"
@@ -693,11 +736,30 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                   </code>
                   <button
                     type="button"
-                    onClick={() => navigator.clipboard.writeText(generatedPassword.password)}
+                    onClick={() => {
+                      if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(generatedPassword.password)
+                          .then(() => toast.success('Copiado para a área de transferência!'))
+                          .catch(() => toast.error('Erro ao copiar'));
+                      } else {
+                        // Fallback para ambientes onde navigator.clipboard pode não estar disponível (ex: HTTP)
+                        const textArea = document.createElement("textarea");
+                        textArea.value = generatedPassword.password;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        try {
+                          document.execCommand('copy');
+                          toast.success('Copiado (fallback)!');
+                        } catch (err) {
+                          toast.error('Erro ao copiar');
+                        }
+                        document.body.removeChild(textArea);
+                      }
+                    }}
                     className="p-3 bg-primary/20 rounded-lg text-primary hover:bg-primary/30 transition-all"
                     title="Copiar"
                   >
-                    📋
+                    <Copy className="w-5 h-5" />
                   </button>
                 </div>
               </div>
