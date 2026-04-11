@@ -87,9 +87,21 @@ export const followsApi = {
    * Obter contadores de seguidores/seguindo
    */
   async getCounts(userId: string): Promise<ApiResponse<FollowCounts>> {
-    const { data, error } = await supabase.rpc('get_follow_counts', { target_user_id: userId });
-    if (error) return { success: false, error: error.message };
-    return { success: true, data: data as FollowCounts };
+    try {
+      const [followersRes, followingRes] = await Promise.all([
+        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', userId),
+        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', userId),
+      ]);
+      return {
+        success: true,
+        data: {
+          followers_count: followersRes.count ?? 0,
+          following_count: followingRes.count ?? 0,
+        },
+      };
+    } catch {
+      return { success: true, data: { followers_count: 0, following_count: 0 } };
+    }
   },
 
   /**
@@ -139,10 +151,20 @@ export const followsApi = {
     const myId = await getMyUserId();
     if (!myId) return { success: false, error: 'Não autenticado' };
 
-    const { data, error } = await supabase.rpc('get_follow_suggestions', {
-      my_user_id: myId,
-      lim: limit,
-    });
+    // Get IDs the user already follows
+    const { data: followingData } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', myId);
+    const followingIds = (followingData || []).map((f: any) => f.following_id);
+    followingIds.push(myId); // exclude self
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('is_active', true)
+      .not('id', 'in', `(${followingIds.join(',')})`)
+      .limit(limit);
 
     if (error) return { success: false, error: error.message };
 
