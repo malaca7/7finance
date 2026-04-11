@@ -96,8 +96,8 @@ export function UserProfilePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Layout wrapper: MainLayout with sidebar if logged in, simple container if not
-  const Wrapper = isLoggedIn ? MainLayout : ({ children }: { children: React.ReactNode }) => (
+  // Perfil público sempre sem sidebar/topbar/bottombar
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <div className="min-h-screen bg-premium-black">
       <div className="max-w-2xl mx-auto p-4 lg:p-8">{children}</div>
     </div>
