@@ -48,7 +48,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
               <Dialog.Panel
                 className={clsx(
                   'w-full transform rounded-3xl bg-premium-dark p-6 shadow-card transition-all',
-                  'border border-white/10',
+                  'border border-white/10 mb-20 sm:mb-0',
                   sizeClasses[size]
                 )}
               >

@@ -401,7 +401,7 @@ export function VehiclesPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-6 pb-2">
             <Button
               variant="outline"
               className="flex-1"
