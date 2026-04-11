@@ -553,13 +553,15 @@ export function ProfilePage() {
             {/* Preview + Save */}
             <div className="flex items-center justify-between gap-3 pt-2">
               {publicUserlink && userlinkStatus === 'available' ? (
-                <Link
-                  to={`/perfil/${publicUserlink}`}
+                <a
+                  href={`/perfil/${publicUserlink}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   Ver perfil público
-                </Link>
+                </a>
               ) : (
                 <span />
               )}
