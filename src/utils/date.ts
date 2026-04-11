@@ -11,61 +11,49 @@ export function getLocalDatetimeForInput(val?: string | null): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+function parseLocalDate(dateStr: string): Date {
+  // Formato do banco PostgreSQL: "2026-04-10 10:00:00" ou "2026-04-10T10:00:00"
+  // Treat as local time, not UTC
+  const cleanDate = dateStr.replace(' ', 'T').split('.')[0];
+  
+  const match = cleanDate.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+  
+  if (match) {
+    const [, year, month, day, hour = '0', minute = '0', second = '0'] = match;
+    // month é 1-indexed no input, mas Date() usa 0-indexed
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute), parseInt(second));
+  }
+  
+  // Fallback
+  return new Date(cleanDate);
+}
+
 export function displayLocaleDatetime(dateStr: string | null | undefined): string {
   if (!dateStr) return '';
   
-  // Tratar data como string local sem conversão de fuso
-  let d: Date;
-  const dateStrClean = dateStr.replace(' ', 'T');
-  
-  // Se tem timezone info (Z ou +HH:MM), usar Date diretamente
-  // Caso contrário, tratar como local
-  if (dateStrClean.endsWith('Z') || dateStrClean.includes('+') || dateStrClean.includes('-')) {
-    d = new Date(dateStrClean);
-  } else {
-    // Parse manual para evitar problema de fuso
-    const parts = dateStrClean.split(/[-T:]/);
-    if (parts.length >= 3) {
-      const year = parseInt(parts[0]);
-      const month = parseInt(parts[1]) - 1;
-      const day = parseInt(parts[2]);
-      const hours = parts[3] ? parseInt(parts[3]) : 0;
-      const minutes = parts[4] ? parseInt(parts[4]) : 0;
-      d = new Date(year, month, day, hours, minutes);
-    } else {
-      d = new Date(dateStrClean);
-    }
+  try {
+    const d = parseLocalDate(dateStr);
+    
+    if (isNaN(d.getTime())) return dateStr;
+    
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  } catch {
+    return dateStr;
   }
-
-  if (isNaN(d.getTime())) return dateStr;
-  
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
 export function displayLocaleDatetimeWithTime(dateStr: string | null | undefined): string {
   if (!dateStr) return '';
   
-  const dateStrClean = dateStr.replace(' ', 'T');
-  
-  let d: Date;
-  if (dateStrClean.endsWith('Z') || dateStrClean.includes('+') || dateStrClean.includes('-')) {
-    d = new Date(dateStrClean);
-  } else {
-    const parts = dateStrClean.split(/[-T:]/);
-    if (parts.length >= 3) {
-      const year = parseInt(parts[0]);
-      const month = parseInt(parts[1]) - 1;
-      const day = parseInt(parts[2]);
-      const hours = parts[3] ? parseInt(parts[3]) : 0;
-      const minutes = parts[4] ? parseInt(parts[4]) : 0;
-      d = new Date(year, month, day, hours, minutes);
-    } else {
-      d = new Date(dateStrClean);
-    }
+  try {
+    const d = parseLocalDate(dateStr);
+    
+    if (isNaN(d.getTime())) return dateStr;
+    
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch {
+    return dateStr;
   }
-  
-  if (isNaN(d.getTime())) return dateStr;
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

@@ -236,12 +236,12 @@ export const usersApi = {
     const { error } = await supabase.from('users').delete().eq('id', id);
     return apiResponse<void>(null, error);
   },
-  async resetPassword(userId: string | number): Promise<ApiResponse<{ newPassword: string }>> {
+  async resetPassword(userId: string | number): Promise<ApiResponse<{ message: string }>> {
     try {
       // Buscar o usuário para obter o email
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('email, name, auth_id')
+        .select('email, name')
         .eq('id', userId)
         .single();
 
@@ -253,35 +253,17 @@ export const usersApi = {
         return { success: false, error: 'Usuário não possui email cadastrado' };
       }
 
-      // Gerar senha aleatória
-      const newPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase();
-      
-      // Atualizar senha no Auth do Supabase usando admin
-      const { error: authError } = await supabase.auth.admin.updateUser({
-        uid: userData.auth_id,
-        password: newPassword
+      // Enviar email de recuperação (o usuário terá que criar nova senha pelo link)
+      const { error } = await supabase.auth.resetPasswordForEmail(userData.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
-      if (authError) {
-        console.error('Auth update error:', authError);
-        return { success: false, error: authError.message };
+      if (error) {
+        console.error('Reset password error:', error);
+        return { success: false, error: error.message };
       }
 
-      // Enviar email com a nova senha usando a função do Edge Function
-      const { error: emailError } = await supabase.functions.invoke('send-reset-password-email', {
-        body: {
-          email: userData.email,
-          name: userData.name,
-          newPassword: newPassword
-        }
-      });
-
-      if (emailError) {
-        console.error('Email sending error:', emailError);
-        // Não falha a operação se o email não for enviado
-      }
-
-      return { success: true, data: { newPassword } };
+      return { success: true, data: { message: 'Email de redefinição enviado para o usuário!' } };
     } catch (err: any) {
       console.error('Reset password error:', err);
       return { success: false, error: err.message || 'Erro ao redefinir senha' };
