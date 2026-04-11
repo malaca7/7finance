@@ -27,8 +27,8 @@ export function MainLayout({ children }: MainLayoutProps) {
         <main
           className={
             sidebarCollapsed
-              ? "flex-1 w-full p-4 lg:p-8 pb-28 lg:pb-8 lg:overflow-y-auto lg:ml-24"
-              : "flex-1 w-full p-4 lg:p-8 pb-28 lg:pb-8 lg:overflow-y-auto lg:ml-72"
+              ? "flex-1 w-full p-4 lg:p-8 pb-36 lg:pb-8 lg:overflow-y-auto lg:ml-24"
+              : "flex-1 w-full p-4 lg:p-8 pb-36 lg:pb-8 lg:overflow-y-auto lg:ml-72"
           }
         >
           <div className="max-w-7xl mx-auto">

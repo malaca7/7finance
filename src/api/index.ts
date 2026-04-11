@@ -27,6 +27,14 @@ async function getMyUserId(): Promise<string | null> {
     const res = await admin.from('users').select('id').eq('auth_id', user.id).maybeSingle();
     data = res.data;
   }
+  // Fallback: if users table has no match, try matching by id directly (some tables use auth uid as usuario_id)
+  if (!data) {
+    // Check if the auth uid itself exists as a users.id
+    const { createAdminClient } = await import('./supabase');
+    const admin = await createAdminClient();
+    const res = await admin.from('users').select('id').eq('id', user.id).maybeSingle();
+    data = res.data;
+  }
   _cachedUserId = data?.id || null;
   return _cachedUserId;
 }
@@ -342,6 +350,9 @@ export const veiculosApi = {
   },
   async create(data: any) { 
     const userId = await getMyUserId();
+    if (!userId) {
+      return { success: false, error: 'Não foi possível identificar o usuário. Faça login novamente.' };
+    }
     const { data: result, error } = await supabase.from('veiculos').insert({ ...data, usuario_id: userId }).select().single();
     return apiResponse<any>(result, error);
   },
