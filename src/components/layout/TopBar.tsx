@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Sun, Moon, Maximize, Minimize, ChevronDown, User, LogOut } from 'lucide-react';
+import { Bell, Sun, Moon, Maximize, Minimize, ChevronDown, User, LogOut, Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store';
 import { usePlanStore } from '../../store/planStore';
@@ -57,6 +57,17 @@ export function TopBar() {
       </div>
 
       <div className="flex items-center gap-1.5">
+        {/* Admin Panel - mobile only */}
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => navigate('/admin')}
+            title="Painel Admin"
+            className="lg:hidden p-2 rounded-xl hover:bg-white/5 transition-all duration-200 text-amber-400 hover:text-amber-300"
+          >
+            <Shield className="w-5 h-5" />
+          </button>
+        )}
+
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
