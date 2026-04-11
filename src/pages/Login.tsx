@@ -99,7 +99,7 @@ export function LoginPage() {
           className="w-24 h-24 object-contain mx-auto"
         />
         <h1 className="text-2xl font-bold text-white text-center mt-2 tracking-tight">7Finance</h1>
-        <p className="text-xs text-gray-500 text-center mt-1 uppercase tracking-widest">Gestão Financeira</p>
+        <p className="text-xs text-gray-500 text-center mt-1 uppercase tracking-widest">Mais Que Uma Gestão Financeira</p>
       </div>
 
       <div className="relative z-10 w-full max-w-[360px] bg-[#0d0d0d] border border-white/10 rounded-2xl p-6">
