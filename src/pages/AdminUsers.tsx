@@ -418,7 +418,8 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                           <code className="text-xs font-mono text-gray-400 bg-premium-black px-2 py-1 rounded min-w-[80px] text-center">
                             {visiblePasswords[user.id] || '••••••••'}
                           </code>
-                          {vidiv className="flex items-center gap-1">
+                          {visiblePasswords[user.id] ? (
+                            <div className="flex items-center gap-1">
                               <button
                                 onClick={() => setVisiblePasswords(prev => { const n = {...prev}; delete n[user.id]; return n; })}
                                 className="p-1.5 rounded-lg text-neutral hover:text-white hover:bg-white/5 transition-all outline-none"
@@ -438,8 +439,7 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                               >
                                 {copiedId === user.id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                               </button>
-                            </divf className="w-3.5 h-3.5" />
-                            </button>
+                            </div>
                           ) : (
                             <button
                               onClick={async () => {
