@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Sun, Moon, Maximize, Minimize, ChevronDown, User, LogOut, Shield } from 'lucide-react';
+import { Bell, Sun, Moon, Maximize, Minimize, ChevronDown, User, LogOut, Shield, LayoutDashboard, Users, BarChart3, FileText, AlertTriangle, Send } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store';
 import { usePlanStore } from '../../store/planStore';
@@ -13,7 +13,18 @@ export function TopBar() {
   const navigate = useNavigate();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const adminMenuRef = useRef<HTMLDivElement>(null);
+
+  const adminMenuItems = [
+    { path: '/admin', label: 'Visão Geral', icon: LayoutDashboard },
+    { path: '/admin/users', label: 'Usuários', icon: Users },
+    { path: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+    { path: '/admin/logs', label: 'Logs', icon: FileText },
+    { path: '/admin/alerts', label: 'Alertas', icon: AlertTriangle },
+    { path: '/admin/notifications', label: 'Notificações', icon: Send },
+  ];
 
   const planDisplay = userPlan?.plano_display || 'Free';
   const planName = userPlan?.plano_nome || 'free';
@@ -28,6 +39,9 @@ export function TopBar() {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setShowUserMenu(false);
+      }
+      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target as Node)) {
+        setShowAdminMenu(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -59,13 +73,42 @@ export function TopBar() {
       <div className="flex items-center gap-1.5">
         {/* Admin Panel - mobile only */}
         {user?.role === 'admin' && (
-          <button
-            onClick={() => navigate('/admin')}
-            title="Painel Admin"
-            className="lg:hidden p-2 rounded-xl hover:bg-white/5 transition-all duration-200 text-amber-400 hover:text-amber-300"
-          >
-            <Shield className="w-5 h-5" />
-          </button>
+          <div className="relative lg:hidden" ref={adminMenuRef}>
+            <button
+              onClick={() => setShowAdminMenu(!showAdminMenu)}
+              title="Painel Admin"
+              className={clsx(
+                "p-2 rounded-xl transition-all duration-200",
+                showAdminMenu ? "bg-amber-500/20 text-amber-300" : "hover:bg-white/5 text-amber-400 hover:text-amber-300"
+              )}
+            >
+              <Shield className="w-5 h-5" />
+            </button>
+
+            {showAdminMenu && (
+              <div className="absolute left-0 top-full mt-2 w-56 bg-premium-dark border border-amber-500/20 rounded-xl shadow-2xl overflow-hidden animate-fade-in z-50">
+                <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-amber-400" />
+                  <span className="text-sm font-bold text-amber-400">Painel Admin</span>
+                </div>
+                <div className="py-1">
+                  {adminMenuItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.path}
+                        onClick={() => { setShowAdminMenu(false); navigate(item.path); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral hover:text-amber-400 hover:bg-amber-500/5 transition-all"
+                      >
+                        <Icon className="w-4 h-4" />
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Theme Toggle */}
