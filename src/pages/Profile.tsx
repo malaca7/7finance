@@ -281,7 +281,10 @@ export function ProfilePage() {
 
   const handleSavePublicProfile = async () => {
     if (!user) return;
-    if (publicUserlink && userlinkStatus !== 'available') {
+    
+    // Only validate userlink if it changed from the original
+    const userlinkChanged = publicUserlink !== (user.userlink || '');
+    if (publicUserlink && userlinkChanged && userlinkStatus !== 'available') {
       toast.error('Escolha um link válido e disponível');
       return;
     }
