@@ -1,4 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+// ...existing code...
+import { useTheme } from '../ThemeContext';
 import {
   LayoutDashboard,
   TrendingUp,
@@ -51,6 +53,8 @@ export function Sidebar() {
     window.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { isCollapsed: newState } }));
   };
 
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   return (
     <>
       {/* Sidebar Desktop */}
@@ -82,7 +86,9 @@ export function Sidebar() {
                 className={clsx(
                   "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors font-bold",
                   isActive
-                    ? "bg-primary text-white shadow-[0_0_16px_0_rgba(57,255,20,0.15)]"
+                    ? isDark
+                      ? "bg-primary text-white shadow-[0_0_16px_0_rgba(57,255,20,0.15)]"
+                      : "bg-primary text-black shadow-[0_0_16px_0_rgba(57,255,20,0.15)]"
                     : "text-primary hover:bg-primary/10 hover:text-primary"
                 )}
               >
@@ -101,7 +107,9 @@ export function Sidebar() {
                 className={clsx(
                   "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors font-bold",
                   isActive
-                    ? "bg-primary text-white shadow-[0_0_16px_0_rgba(57,255,20,0.15)]"
+                    ? isDark
+                      ? "bg-primary text-white shadow-[0_0_16px_0_rgba(57,255,20,0.15)]"
+                      : "bg-primary text-black shadow-[0_0_16px_0_rgba(57,255,20,0.15)]"
                     : "text-primary hover:bg-primary/10 hover:text-primary"
                 )}
               >
