@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Phone } from 'lucide-react';
-import { Button, Input } from '../components/ui';
+import { Mail, Lock, Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Button } from '../components/ui';
 import { useAppStore } from '../store';
 import { authApi } from '../api';
-import type { DriverType } from '../types';
 import clsx from 'clsx';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAppStore();
-  const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -18,43 +16,39 @@ export function LoginPage() {
   const [forgotMessage, setForgotMessage] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   
-  // Form states
-  const [telefone, setTelefone] = useState(() => localStorage.getItem('remembered_phone') || '');
+  const [email, setEmail] = useState(() => localStorage.getItem('remembered_phone') || '');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  
-  // Register form
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [tipos, setTipos] = useState<DriverType[]>(['app']); // Multiple selection state
-
-  const toggleTipo = (tipo: DriverType) => {
-    setTipos(prev => 
-      prev.includes(tipo) 
-        ? prev.filter(t => t !== tipo) 
-        : [...prev, tipo]
-    );
-  };
 
   const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 2) return numbers;
+    const numbers = value.replace(/\D/g, '').slice(0, 11);
+    if (numbers.length <= 2) return `(${numbers}`;
     if (numbers.length <= 3) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 3)} ${numbers.slice(3)}`;
+    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 3)} ${numbers.slice(3, 7)}`;
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 3)} ${numbers.slice(3, 7)}.${numbers.slice(7, 11)}`;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanEmail = email.replace(/\D/g, '');
+    if (!cleanEmail || !password) {
+      setError('Preencha telefone e senha');
+      return;
+    }
+    if (cleanEmail.length < 10) {
+      setError('Telefone inválido');
+      return;
+    }
     setIsLoading(true);
     setError('');
     
     try {
-      const response = await authApi.login(telefone, password);
+      const response = await authApi.login(cleanEmail, password);
       
       if (response.success && response.data) {
         if (rememberMe) {
-          localStorage.setItem('remembered_phone', telefone);
+          localStorage.setItem('remembered_phone', email);
         } else {
           localStorage.removeItem('remembered_phone');
         }
@@ -64,7 +58,7 @@ export function LoginPage() {
         setError(response.error || 'Credenciais inválidas');
       }
     } catch (err) {
-      setError('Erro ao conectar com o servidor');
+      setError('Erro ao conectar');
     } finally {
       setIsLoading(false);
     }
@@ -72,296 +66,177 @@ export function LoginPage() {
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!forgotEmail.trim()) {
+      setForgotMessage('Digite seu email');
+      return;
+    }
     setForgotLoading(true);
     setForgotMessage('');
     
     try {
       const response = await authApi.forgotPassword(forgotEmail);
       if (response.success) {
-        setForgotMessage('Se o email existir, você receberá um link para redefinir sua senha.');
+        setForgotMessage('Se o email existir, você receberá um link.');
       } else {
-        setForgotMessage(response.error || 'Erro ao processar solicitação');
+        setForgotMessage(response.error || 'Erro ao processar');
       }
     } catch (err) {
-      setForgotMessage('Erro ao conectar com o servidor');
+      setForgotMessage('Erro ao conectar');
     } finally {
       setForgotLoading(false);
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (tipos.length === 0) {
-      setError('Selecione ao menos um tipo de atuação');
-      return;
-    }
-    
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      const response = await authApi.register({
-        nome,
-        telefone,
-        email,
-        tipo: tipos.join(','),
-        password,
-      });
-      
-      if (response.success && response.data) {
-        login(response.data.user, response.data.token);
-        navigate('/dashboard');
-      } else {
-        setError(response.error || 'Erro ao criar conta');
-      }
-    } catch (err) {
-      setError('Erro ao conectar com o servidor');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Elements */}
-      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_50%,rgba(212,175,55,0.08),transparent_50%)] pointer-events-none" />
-      <div className="absolute top-1/2 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_50%,rgba(59,130,246,0.05),transparent_50%)] pointer-events-none" />
-
-      <div className="w-full max-w-md z-10">
-        {/* Logo */}
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center">
-            <img 
-              src="https://i.postimg.cc/gY9KR36Q/Chat-GPT-Image-7-de-abr-de-2026-13-14-27.png" 
-              alt="7 Finance Logo" 
-              className="w-48 h-48 object-contain drop-shadow-glow"
-            />
-          </div>
-        </div>
-
-        {/* Login Card */}
-        <div className="bg-premium-dark/80 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-premium-gold/10 relative">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-premium-gold/40 to-transparent" />
-          
-          <h2 className="text-xl font-light tracking-widest text-white mb-8 text-center uppercase">
-            {showForgotPassword ? 'Recuperar Senha' : (isLogin ? 'Autenticação' : 'Novo Cadastro')}
-          </h2>
-          
-          {error && (
-            <div className="mb-6 p-4 bg-red-950/30 border border-red-500/30 rounded-xl text-red-400 text-xs text-center animate-shake">
-              {error}
-            </div>
-          )}
-          
-          {showForgotPassword ? (
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <Input
-                label="Seu E-mail"
-                type="email"
-                value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-                placeholder="exemplo@email.com"
-                required
-                className="bg-black/40 border-premium-gold/10 focus:border-premium-gold/40 transition-all duration-300"
-                icon={<Mail className="w-4 h-4 text-premium-gold/60" />}
-              />
-              
-              {forgotMessage && (
-                <div className={`p-4 rounded-xl text-xs text-center ${forgotMessage.includes('receber') ? 'bg-green-950/30 border border-green-500/30 text-green-400' : 'bg-red-950/30 border border-red-500/30 text-red-400'}`}>
-                  {forgotMessage}
-                </div>
-              )}
-              
-              <Button
-                type="submit"
-                variant="primary"
-                className="w-full mt-4 py-6 font-bold tracking-widest transition-all duration-500"
-                isLoading={forgotLoading}
-              >
-                ENVIAR LINK DE RECUPERAÇÃO
-              </Button>
-              
-              <div className="text-center mt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForgotPassword(false);
-                    setForgotMessage('');
-                  }}
-                  className="text-gray-400 hover:text-premium-gold text-xs tracking-widest transition-colors"
-                >
-                  Voltar para o login
-                </button>
-              </div>
-            </form>
-          ) : isLogin ? (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <Input
-                label="Número de Telefone"
-                type="text"
-                value={telefone}
-                onChange={(e) => setTelefone(formatPhone(e.target.value))}
-                placeholder="(00) 0 0000.0000"
-                required
-                className="bg-black/40 border-premium-gold/10 focus:border-premium-gold/40 transition-all duration-300"
-                icon={<Phone className="w-4 h-4 text-premium-gold/60" />}
-              />
-              
-              <Input
-                label="Sua Senha"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="bg-black/40 border-premium-gold/10 focus:border-premium-gold/40 transition-all duration-300"
-                icon={<Lock className="w-4 h-4 text-premium-gold/60" />}
-              />
-
-              <div className="flex items-center gap-2 mt-2 px-1">
-                <button
-                  type="button"
-                  onClick={() => setRememberMe(!rememberMe)}
-                  className={clsx(
-                    "w-4 h-4 rounded border flex items-center justify-center transition-all duration-300",
-                    rememberMe 
-                      ? "bg-premium-gold border-premium-gold text-black" 
-                      : "bg-black/40 border-white/20 text-transparent"
-                  )}
-                >
-                  <div className={clsx("w-2 h-2 bg-current rounded-sm", rememberMe ? "scale-100" : "scale-0")} />
-                </button>
-                <span 
-                  className="text-[10px] text-gray-500 uppercase tracking-widest font-bold cursor-pointer hover:text-gray-300 transition-colors"
-                  onClick={() => setRememberMe(!rememberMe)}
-                >
-                  Lembrar telefone para o próximo acesso
-                </span>
-              </div>
-              
-              <Button
-                type="submit"
-                variant="primary"
-                className="w-full mt-4 py-6 font-bold tracking-widest transition-all duration-500 group overflow-hidden relative"
-                isLoading={isLoading}
-              >
-                <span className="relative z-10">ENTRAR NO SISTEMA</span>
-              </Button>
-              
-              <div className="text-center mt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowForgotPassword(true)}
-                  className="text-gray-400 hover:text-premium-gold text-xs tracking-widest transition-colors"
-                >
-                  Esqueci minha senha
-                </button>
-              </div>
-            </form>
-          ) : (
-            <form onSubmit={handleRegister} className="space-y-4">
-              <Input
-                label="Nome Completo"
-                type="text"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Nome e Sobrenome"
-                required
-                className="bg-black/40 border-premium-gold/10"
-                icon={<User className="w-4 h-4 text-premium-gold/60" />}
-              />
-
-              <Input
-                label="E-mail"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="exemplo@email.com"
-                required
-                className="bg-black/40 border-premium-gold/10"
-                icon={<Mail className="w-4 h-4 text-premium-gold/60" />}
-              />
-
-              <Input
-                label="Telefone / Login"
-                type="text"
-                value={telefone}
-                onChange={(e) => setTelefone(formatPhone(e.target.value))}
-                placeholder="(00) 0 0000.0000"
-                required
-                className="bg-black/40 border-premium-gold/10"
-                icon={<Phone className="w-4 h-4 text-premium-gold/60" />}
-              />
-
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">
-                  Tipo de Atuação (Selecione um ou mais)
-                </label>
-                <div className="grid grid-cols-1 gap-2">
-                  {[
-                    { id: 'app', label: 'Motorista de Aplicativo' },
-                    { id: 'particular', label: 'Motorista Particular' },
-                    { id: 'taxi', label: 'Motorista de Táxi' }
-                  ].map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => toggleTipo(option.id as DriverType)}
-                      className={clsx(
-                        "flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-300 text-sm font-medium",
-                        tipos.includes(option.id as DriverType)
-                          ? "bg-premium-gold/20 border-premium-gold/40 text-premium-gold shadow-glow-sm"
-                          : "bg-black/40 border-white/5 text-gray-400 hover:border-white/20"
-                      )}
-                    >
-                      <span>{option.label}</span>
-                      {tipos.includes(option.id as DriverType) && (
-                        <div className="w-2 h-2 rounded-full bg-premium-gold animate-pulse" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <Input
-                label="Crie uma Senha"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="bg-black/40 border-premium-gold/10"
-                icon={<Lock className="w-4 h-4 text-premium-gold/60" />}
-              />
-              
-              <Button
-                type="submit"
-                variant="primary"
-                className="w-full mt-4 py-6 font-bold tracking-widest"
-                isLoading={isLoading}
-              >
-                CRIAR MINHA CONTA
-              </Button>
-            </form>
-          )}
-
-          <div className="mt-8 text-center pt-6 border-t border-white/5">
-            <button
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError('');
-              }}
-              className="text-gray-400 hover:text-premium-gold text-xs tracking-widest transition-colors duration-300 flex items-center justify-center gap-2 mx-auto"
-            >
-              {isLogin ? (
-                <>NÃO TEM CONTA? <span className="text-premium-gold font-bold">CADASTRE-SE</span></>
-              ) : (
-                <>JÁ É MEMBRO? <span className="text-premium-gold font-bold">FAZER LOGIN</span></>
-              )}
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a] to-black" />
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial_gradient(ellipse_at_top,rgba(30,30,30,0.5)_0%,transparent_60%)] pointer-events-none" />
+      
+      <div className="relative z-10 mb-8">
+        <img 
+          src="https://i.postimg.cc/gY9KR36Q/Chat-GPT-Image-7-de-abr-de-2026-13-14-27.png" 
+          alt="7 Finance" 
+          className="w-24 h-24 object-contain mx-auto"
+        />
+        <h1 className="text-2xl font-bold text-white text-center mt-2 tracking-tight">7Finance</h1>
+        <p className="text-xs text-gray-500 text-center mt-1 uppercase tracking-widest">Gestão Financeira</p>
       </div>
+
+      <div className="relative z-10 w-full max-w-[360px] bg-[#0d0d0d] border border-white/10 rounded-2xl p-6">
+        <h2 className="text-lg font-semibold text-white text-center mb-6">
+          {showForgotPassword ? 'Recuperar Senha' : 'Bem-vindo de volta'}
+        </h2>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-xs text-center">
+            {error}
+          </div>
+        )}
+
+        {!showForgotPassword && (
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input
+              type="text"
+              value={email}
+              onChange={(e) => setEmail(formatPhone(e.target.value))}
+              placeholder="(00) 0 0000.0000"
+              className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#22C55E] text-base"
+              autoComplete="username"
+            />
+            
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Senha"
+                className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#22C55E] text-base pr-12"
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={() => setRememberMe(!rememberMe)}
+                className={clsx(
+                  "w-5 h-5 rounded border flex items-center justify-center transition-all",
+                  rememberMe ? "bg-[#22C55E] border-[#22C55E]" : "border-white/30"
+                )}
+              >
+                {rememberMe && <span className="text-white text-xs">✓</span>}
+              </button>
+              <span className="text-gray-400 text-sm ml-2">Lembrar acesso</span>
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full py-3 font-semibold"
+              isLoading={isLoading}
+            >
+              Entrar
+              <ArrowRight className="w-4 h-4 ml-2 inline" />
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-center w-full text-[#22C55E] text-sm hover:underline"
+            >
+              Esqueci minha senha
+            </button>
+
+            <div className="pt-4 border-t border-white/10">
+              <p className="text-gray-400 text-sm text-center">
+                Não tem conta?{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('/register')}
+                  className="text-[#22C55E] hover:underline font-medium"
+                >
+                  Criar conta
+                </button>
+              </p>
+            </div>
+          </form>
+        )}
+
+        {showForgotPassword && (
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <p className="text-gray-400 text-sm text-center mb-4">
+              Digite seu email para receber o link de recuperação.
+            </p>
+
+            <input
+              type="email"
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              placeholder="Seu email"
+              className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#22C55E] text-base"
+            />
+
+            {forgotMessage && (
+              <div className={clsx(
+                "p-3 rounded-lg text-xs text-center",
+                forgotMessage.includes('receber') 
+                  ? "bg-green-500/10 text-green-400 border border-green-500/30" 
+                  : "bg-red-500/10 text-red-400 border border-red-500/30"
+              )}>
+                {forgotMessage}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full py-3 font-semibold"
+              isLoading={forgotLoading}
+            >
+              Enviar link
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => { setShowForgotPassword(false); setError(''); }}
+              className="text-center w-full text-gray-400 text-sm hover:text-white"
+            >
+              Voltar para login
+            </button>
+          </form>
+        )}
+      </div>
+
+      <p className="relative z-10 text-gray-600 text-xs mt-8 text-center">
+        © 2024 7Finance. Todos os direitos reservados.
+      </p>
     </div>
   );
 }

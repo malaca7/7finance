@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://divecpmkitjqkfyxnfds.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpdmVjcG1raXRqcWtmeXhuZmRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MDI2NTAsImV4cCI6MjA5MTA3ODY1MH0.2Lr71tBmmVzquKIGn39y20sPDYcOcIrTbjwVGpwj8Xk';
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -9,6 +10,25 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
   },
 });
+
+let adminClient: any = null;
+export async function createAdminClient() {
+  if (adminClient) return adminClient;
+  
+  if (!supabaseServiceKey) {
+    console.warn('VITE_SUPABASE_SERVICE_KEY não configurada. Usando client normal.');
+    return supabase;
+  }
+  
+  adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+  
+  return adminClient;
+}
 
 export const apiCall = async <T>(table: string, query: any = {}) => {
   let request = supabase.from(table).select('*');

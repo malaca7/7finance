@@ -2,10 +2,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAppStore } from './store';
 import { ScrollToTop } from './components/ScrollToTop';
+import { NotificationPermissionPrompt } from './components/notifications/NotificationPermissionPrompt';
 import { Toaster } from 'react-hot-toast';
 
 // Pages
 import { LoginPage } from './pages/Login';
+import { RegisterStep1Page } from './pages/RegisterStep1';
+import { RegisterStep2Page } from './pages/RegisterStep2';
 import { ResetPasswordPage } from './pages/ResetPassword';
 import { DashboardPage } from './pages/Dashboard';
 import { EarningsPage } from './pages/Earnings';
@@ -13,6 +16,8 @@ import { ExpensesPage } from './pages/Expenses';
 import { KmPage } from './pages/Km';
 import { MaintenancePage } from './pages/Maintenance';
 import { ProfilePage } from './pages/Profile';
+import { NotificationsHistoryPage } from './pages/NotificationsHistory';
+import { ChatPage } from './pages/Chat';
 
 // Admin Pages
 import { AdminOverviewPage } from './pages/AdminOverview';
@@ -20,6 +25,7 @@ import { AdminUsersPage } from './pages/AdminUsers';
 import { AdminAnalyticsPage } from './pages/AdminAnalytics';
 import { AdminLogsPage } from './pages/AdminLogs';
 import { AdminAlertsPage } from './pages/AdminAlerts';
+import { AdminNotificationsPanel } from './pages/AdminNotifications';
 
 const AdminPage = AdminOverviewPage;
 
@@ -81,6 +87,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const { user } = useAppStore();
   
   return (
     <BrowserRouter basename={basename}>
@@ -88,7 +95,7 @@ function App() {
       <Toaster 
         position="top-center"
         toastOptions={{
-          className: 'bg-premium-black border border-premium-gold/30 text-white',
+          className: 'bg-premium-black border border-primary/30 text-white',
           style: {
             background: '#121212',
             color: '#fff',
@@ -100,9 +107,15 @@ function App() {
           },
         }}
       />
+      
+      {/* Mostrar prompt de notificações se usuário estiver autenticado */}
+      {user?.id && <NotificationPermissionPrompt userId={user.id} />}
+      
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterStep1Page />} />
+        <Route path="/register-step2" element={<RegisterStep2Page />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         
         <Route
@@ -158,6 +171,24 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationsHistoryPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          }
+        />
         
         <Route
           path="/admin"
@@ -200,6 +231,15 @@ function App() {
           element={
             <AdminRoute>
               <AdminAlertsPage />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/notifications"
+          element={
+            <AdminRoute>
+              <AdminNotificationsPanel />
             </AdminRoute>
           }
         />

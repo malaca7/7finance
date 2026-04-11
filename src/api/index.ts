@@ -60,22 +60,76 @@ function adaptUser(raw: any): User {
 export const authApi = {
   async login(telefone: string, senha: string): Promise<ApiResponse<{ user: User; token: string }>> {
     try {
-      // Se já tem @, usa como email direto; senão, converte telefone → email
-      const email = telefone.includes('@') ? telefone : `${telefone.replace(/\D/g, '')}@7finance.com`;
+      const cleanPhone = telefone.replace(/\D/g, '');
+      const phoneEmail = `${cleanPhone}@7finance.com`;
+      
+      let emailToTry = phoneEmail;
+      
+      // First try with phone-based email
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: phoneEmail,
         password: senha,
       });
 
-      if (authError) return { success: false, error: authError.message };
+      // If phone-based email didn't work, try the direct email
+      if (authError && authError.message.includes('Invalid')) {
+        const { data: authData2, error: authError2 } = await supabase.auth.signInWithPassword({
+          email: telefone,
+          password: senha,
+        });
+        
+        if (authError2) {
+          console.error('Auth error:', authError2.message);
+          return { 
+            success: false, 
+            error: authError2.message.includes('Invalid') 
+              ? 'Telefone ou senha incorretos' 
+              : authError2.message 
+          };
+        }
+        
+        emailToTry = telefone;
+      } else if (authError) {
+        console.error('Auth error:', authError.message);
+        return { 
+          success: false, 
+          error: authError.message.includes('Invalid') 
+            ? 'Telefone ou senha incorretos' 
+            : authError.message 
+        };
+      }
 
+      // Get user profile from users table
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('auth_id', authData.user.id)
         .single();
 
-      if (userError) return { success: false, error: userError.message };
+      if (userError || !userData) {
+        // Create user profile if doesn't exist
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({
+            auth_id: authData.user.id,
+            phone: cleanPhone,
+            name: authData.user.email?.split('@')[0] || 'Usuário',
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          return { success: false, error: 'Erro ao criar perfil: ' + createError.message };
+        }
+        
+        return {
+          success: true,
+          data: {
+            user: adaptUser(newUser),
+            token: authData.session?.access_token || '',
+          },
+        };
+      }
 
       return {
         success: true,
@@ -236,7 +290,7 @@ export const usersApi = {
     const { error } = await supabase.from('users').delete().eq('id', id);
     return apiResponse<void>(null, error);
   },
-  async resetPassword(userId: string | number): Promise<ApiResponse<{ newPassword: string; email: string; name: string }>> {
+  async resetPassword(userId: string | number, customPassword?: string): Promise<ApiResponse<{ newPassword: string; email: string; name: string }>> {
     try {
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -248,31 +302,25 @@ export const usersApi = {
         return { success: false, error: 'Usuário não encontrado' };
       }
 
-      if (!userData.email) {
-        return { success: false, error: 'Usuário não possui email cadastrado' };
+      if (!userData.auth_id) {
+        return { success: false, error: 'Usuário não possui auth_id' };
       }
 
-      // Gerar senha aleatória
-      const newPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase();
-      
-      // Tentar enviar email de recuperação
-      const { error } = await supabase.auth.resetPasswordForEmail(userData.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const newPassword = customPassword || Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase();
 
-      // Se email falhar (provedor desabilitado), ainda retornamos sucesso com a senha gerada
-      // para que o admin possa informar manualmente ao usuário
-      if (error) {
-        console.warn('Email sending failed, returning password for manual delivery:', error.message);
+      if (!customPassword && userData.email) {
+        await supabase.auth.resetPasswordForEmail(userData.email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
       }
 
-      return { 
-        success: true, 
-        data: { 
+      return {
+        success: true,
+        data: {
           newPassword,
-          email: userData.email,
+          email: userData.email || '',
           name: userData.name || 'Usuário'
-        } 
+        }
       };
     } catch (err: any) {
       console.error('Reset password error:', err);
@@ -455,6 +503,47 @@ export const dashboardApi = {
 };
 
 export const adminApi = {
+  async updateUserPassword(userId: string | number, newPassword: string): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('auth_id, name')
+        .eq('id', userId)
+        .single();
+
+      if (userError || !userData) {
+        return { success: false, error: 'Usuário não encontrado' };
+      }
+
+      if (!userData.auth_id) {
+        return { success: false, error: 'Usuário não possui auth_id' };
+      }
+
+      const { createAdminClient } = await import('./supabase');
+      const supabaseAdmin = await createAdminClient();
+      
+      if (!supabaseAdmin) {
+        return { success: false, error: 'Configuração de admin não disponível. Configure VITE_SUPABASE_SERVICE_KEY no arquivo .env' };
+      }
+      
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(userData.auth_id, {
+        password: newPassword
+      });
+
+      if (error) {
+        if (error.message.includes('User not allowed')) {
+          return { success: false, error: 'Não é possível alterar senha via API. Use o painel de autenticação do Supabase.' };
+        }
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: { message: 'Senha atualizada com sucesso' } };
+    } catch (err: any) {
+      console.error('Update password error:', err);
+      return { success: false, error: err.message || 'Erro ao atualizar senha' };
+    }
+  },
+
   async getDashboardData(): Promise<ApiResponse<any>> {
     try {
       const { data, error } = await supabase.rpc('admin_dashboard_data');
