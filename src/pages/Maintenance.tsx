@@ -82,9 +82,6 @@ export function MaintenancePage() {
   const overdue = filteredMaintenances.filter(m => m.status === 'atrasado').length;
   const completed = filteredMaintenances.filter(m => m.status === 'concluido').length;
 
-  const overdue = filteredMaintenances.filter(m => m.status === 'atrasado').length;
-  const completed = filteredMaintenances.filter(m => m.status === 'concluido').length;
-
   return (
     <MainLayout>
       <div className="space-y-6">
