@@ -179,9 +179,7 @@ function App() {
           path="/km"
           element={
             <ProtectedRoute>
-              <PlanRoute path="/km">
-                <KmPage />
-              </PlanRoute>
+              <KmPage />
             </ProtectedRoute>
           }
         />
@@ -190,9 +188,7 @@ function App() {
           path="/manutencao"
           element={
             <ProtectedRoute>
-              <PlanRoute path="/manutencao">
-                <MaintenancePage />
-              </PlanRoute>
+              <MaintenancePage />
             </ProtectedRoute>
           }
         />
@@ -219,9 +215,7 @@ function App() {
           path="/notifications"
           element={
             <ProtectedRoute>
-              <PlanRoute path="/notifications">
-                <NotificationsHistoryPage />
-              </PlanRoute>
+              <NotificationsHistoryPage />
             </ProtectedRoute>
           }
         />
@@ -230,9 +224,7 @@ function App() {
           path="/chat"
           element={
             <ProtectedRoute>
-              <PlanRoute path="/chat">
-                <ChatPage />
-              </PlanRoute>
+              <ChatPage />
             </ProtectedRoute>
           }
         />

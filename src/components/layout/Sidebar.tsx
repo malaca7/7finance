@@ -18,16 +18,11 @@ import {
   BarChart3,
   FileText,
   AlertTriangle,
-  Send,
-  Lock
+  Send
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store';
-import { usePlanAccess } from '../../hooks/usePlanAccess';
-import { canAccessRoute, getRouteMinPlan } from '../../config/planRoutes';
-import { UpgradeModal } from '../plans/UpgradeModal';
 import { clsx } from 'clsx';
-import type { PlanType } from '../../types';
 
 type MenuItem = {
   path: string;
@@ -93,12 +88,10 @@ export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAppStore();
-  const { planName } = usePlanAccess();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
-  const [upgradeTarget, setUpgradeTarget] = useState<{ plan: PlanType; label: string } | null>(null);
-
+  const [mobileCategory, setMobileCategory] = useState<number | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<string[]>(() => {
     const saved = sessionStorage.getItem('sidebar_categories');
     if (saved) {
@@ -147,32 +140,6 @@ export function Sidebar() {
 
   const renderMenuItem = (item: MenuItem, isActive: boolean, customActiveClass?: string) => {
     const Icon = item.icon;
-    const hasAccess = canAccessRoute(planName as PlanType, item.path);
-
-    if (!hasAccess) {
-      const requiredPlan = getRouteMinPlan(item.path);
-      return (
-        <button
-          key={item.path}
-          onClick={() => setUpgradeTarget({ plan: requiredPlan, label: item.label })}
-          className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 font-semibold text-neutral/40 hover:bg-white/5 w-full group"
-          title={`Requer plano ${requiredPlan === 'pro' ? 'Pro' : 'Premium'}`}
-        >
-          <div className="relative shrink-0">
-            <Icon className="w-7 h-7" />
-            <Lock className="w-3 h-3 absolute -bottom-0.5 -right-0.5 text-amber-400" />
-          </div>
-          {!isCollapsed && (
-            <>
-              <span className="text-lg font-semibold leading-none truncate">{item.label}</span>
-              <span className="ml-auto text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                {requiredPlan === 'pro' ? 'Pro' : 'Premium'}
-              </span>
-            </>
-          )}
-        </button>
-      );
-    }
 
     return (
       <Link
@@ -278,54 +245,83 @@ export function Sidebar() {
       </aside>
 
       {/* Bottom Tab Bar - Mobile Only */}
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full h-16 bg-premium-dark border-t border-white/5 z-[100] flex justify-around items-center px-0.5 pb-safe">
-        {personalCategories.flatMap(category => category.items).map((item) => {
-          const isActive = location.pathname === item.path;
-          const Icon = item.icon;
-          const hasAccess = canAccessRoute(planName as PlanType, item.path);
+      {(() => {
+        // Determinar categoria ativa baseada na rota atual
+        const activeCatIndex = personalCategories.findIndex(cat =>
+          cat.items.some(item => location.pathname === item.path || location.pathname.startsWith(item.path + '/'))
+        );
+        const defaultCat = activeCatIndex >= 0 ? activeCatIndex : 0;
 
-          if (!hasAccess) {
-            const requiredPlan = getRouteMinPlan(item.path);
-            return (
-              <button
-                key={item.path}
-                onClick={() => setUpgradeTarget({ plan: requiredPlan, label: item.label })}
-                className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200 rounded-xl mx-0.5 text-neutral/30"
-                style={{ fontSize: 11 }}
-              >
-                <div className="relative">
-                  <Icon className="w-6 h-6" />
-                  <Lock className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1 text-amber-400" />
+        return (
+          <div className="lg:hidden fixed bottom-0 left-0 w-full z-[100]">
+            {/* Itens da categoria selecionada */}
+            {mobileCategory !== null && (
+              <>
+                {/* Backdrop */}
+                <div
+                  className="fixed inset-0 bg-black/40 z-[99]"
+                  onClick={() => setMobileCategory(null)}
+                />
+                <div className="relative z-[101] bg-premium-dark border-t border-white/10 px-2 pt-2 pb-1 animate-slideUp">
+                  <div className="flex justify-around items-center gap-1">
+                    {personalCategories[mobileCategory].items.map((item) => {
+                      const isActive = location.pathname === item.path;
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          onClick={() => setMobileCategory(null)}
+                          className={clsx(
+                            "flex flex-col items-center justify-center flex-1 py-2.5 gap-1 rounded-xl transition-all duration-200 touch-manipulation active:scale-95",
+                            isActive ? "bg-secondary text-white" : "text-neutral hover:text-primary hover:bg-primary/10"
+                          )}
+                        >
+                          <Icon className={clsx("w-5 h-5", isActive && "scale-110")} />
+                          <span className={clsx("text-[10px] truncate max-w-[70px]", isActive ? "text-white font-bold" : "text-neutral")}>
+                            {item.label}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
-                <span className="truncate max-w-[65px] text-[10px] text-neutral/30">{item.label}</span>
-              </button>
-            );
-          }
+              </>
+            )}
 
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={clsx(
-                "flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200 rounded-xl mx-0.5 touch-manipulation active:scale-95",
-                isActive ? "bg-secondary text-white" : "text-neutral hover:text-primary hover:bg-primary/10"
-              )}
-              style={{ fontSize: 11 }}
-            >
-              <Icon className={clsx("w-6 h-6", isActive ? "scale-110" : "")}/>
-              <span className={clsx("truncate max-w-[65px] text-[10px]", isActive ? "text-white font-bold" : "text-neutral")}>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Upgrade Modal */}
-      <UpgradeModal
-        isOpen={!!upgradeTarget}
-        onClose={() => setUpgradeTarget(null)}
-        featureName={upgradeTarget?.label}
-        requiredPlan={upgradeTarget?.plan ?? 'pro'}
-      />
+            {/* Barra de categorias */}
+            <nav className="bg-premium-dark border-t border-white/5 h-16 flex justify-around items-center px-1 pb-safe">
+              {personalCategories.map((cat, idx) => {
+                const CatIcon = cat.icon;
+                const isCatActive = idx === defaultCat;
+                const isExpanded = mobileCategory === idx;
+                return (
+                  <button
+                    key={cat.title}
+                    onClick={() => setMobileCategory(isExpanded ? null : idx)}
+                    className={clsx(
+                      "flex flex-col items-center justify-center flex-1 h-full gap-0.5 rounded-xl mx-0.5 transition-all duration-200 touch-manipulation active:scale-95",
+                      isExpanded
+                        ? "bg-primary/20 text-primary"
+                        : isCatActive
+                          ? "text-white"
+                          : "text-neutral hover:text-primary"
+                    )}
+                  >
+                    <CatIcon className={clsx("w-6 h-6", (isCatActive || isExpanded) && "scale-110")} />
+                    <span className={clsx(
+                      "text-[10px] truncate max-w-[65px]",
+                      isExpanded ? "text-primary font-bold" : isCatActive ? "text-white font-bold" : "text-neutral"
+                    )}>
+                      {cat.title}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        );
+      })()}
     </>
   );
 }
