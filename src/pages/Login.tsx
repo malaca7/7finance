@@ -31,20 +31,21 @@ export function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanEmail = email.replace(/\D/g, '');
-    if (!cleanEmail || !password) {
+    const cleanPhone = email.replace(/\D/g, '');
+    if (!cleanPhone || !password) {
       setError('Preencha telefone e senha');
       return;
     }
-    if (cleanEmail.length < 10) {
-      setError('Telefone inválido');
+    if (cleanPhone.length < 10) {
+      setError('Telefone inválido (mínimo 10 dígitos)');
       return;
     }
     setIsLoading(true);
     setError('');
     
     try {
-      const response = await authApi.login(cleanEmail, password);
+      console.log('Tentando login para:', cleanPhone);
+      const response = await authApi.login(cleanPhone, password);
       
       if (response.success && response.data) {
         if (rememberMe) {
@@ -52,13 +53,16 @@ export function LoginPage() {
         } else {
           localStorage.removeItem('remembered_phone');
         }
-        login(response.data.user, response.data.token);
+        await login(response.data.user, response.data.token);
+        console.log('Login bem sucedido, redirecionando...');
         navigate('/dashboard');
       } else {
-        setError(response.error || 'Credenciais inválidas');
+        console.error('Falha no login:', response.error);
+        setError(response.error || 'Telefone ou senha incorretos');
       }
-    } catch (err) {
-      setError('Erro ao conectar');
+    } catch (err: any) {
+      console.error('Erro de rede ou exceção:', err);
+      setError('Erro ao conectar ao servidor. Tente novamente mais tarde.');
     } finally {
       setIsLoading(false);
     }
