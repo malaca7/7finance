@@ -9,8 +9,8 @@ import { dashboardApi, earningsApi, expensesApi, kmApi } from '../api';
 import type { DateFilter } from '../types';
 
 const COLORS = {
-  gold: '#D4AF37',
-  goldLight: '#E5C158',
+  neon: '#39FF14',
+  neonLight: '#66FF66',
   green: '#22C55E',
   red: '#EF4444',
   blue: '#3B82F6',
@@ -21,8 +21,8 @@ const COLORS = {
   lime: '#84CC16',
 };
 
-const EARNINGS_COLORS = ['#D4AF37', '#22C55E', '#3B82F6'];
-const EXPENSES_COLORS = ['#EF4444', '#F97316', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#E5C158'];
+const EARNINGS_COLORS = ['#39FF14', '#22C55E', '#3B82F6'];
+const EXPENSES_COLORS = ['#EF4444', '#F97316', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#66FF66'];
 
 const filterOptions = [
   { value: 'diario', label: 'Hoje' },
@@ -120,11 +120,11 @@ export function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Earnings */}
           <Card variant="highlight" className="relative overflow-hidden">
-            <div className="absolute right-0 top-0 w-24 h-24 bg-premium-gold/10 rounded-full -mr-8 -mt-8" />
+            <div className="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-primary/20 via-accent/10 to-primary/10 rounded-full -mr-8 -mt-8" />
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-premium-gold/20 rounded-premium">
-                  <TrendingUp className="w-5 h-5 text-premium-gold" />
+                <div className="p-2 bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10 rounded-premium">
+                  <TrendingUp className="w-5 h-5 text-primary drop-shadow-[0_0_8px_#39FF14]" />
                 </div>
                 <span className="text-primary text-base font-semibold">Total Ganhos</span>
               </div>
