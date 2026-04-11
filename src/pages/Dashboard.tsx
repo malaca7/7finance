@@ -6,6 +6,8 @@ import { Card, CardHeader, Select } from '../components/ui';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAppStore } from '../store';
 import { dashboardApi, earningsApi, expensesApi, kmApi } from '../api';
+import { PlanBadge } from '../components/plans';
+import { usePlanAccess } from '../hooks/usePlanAccess';
 import type { DateFilter } from '../types';
 
 const EARNINGS_COLORS = ['#22C55E', '#16A34A', '#065F46'];
@@ -19,6 +21,7 @@ const filterOptions = [
 
 export function DashboardPage() {
   const { user, setEarnings, setExpenses, setKmRegistries, dateFilter, setDateFilter, dashboardSummary, setDashboardSummary, setLoading } = useAppStore();
+  const { planName } = usePlanAccess();
 
   useEffect(() => {
     loadData();
@@ -88,9 +91,12 @@ export function DashboardPage() {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-white">
-              Olá, <span className="text-primary">{user?.nome?.split(' ')[0]}</span>!
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-extrabold text-white">
+                Olá, <span className="text-primary">{user?.nome?.split(' ')[0]}</span>!
+              </h1>
+              <PlanBadge plan={planName} size="sm" />
+            </div>
             <p className="text-neutral mt-1 text-lg">Veja o resumo das suas finanças</p>
           </div>
           

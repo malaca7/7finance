@@ -18,6 +18,7 @@ import { MaintenancePage } from './pages/Maintenance';
 import { ProfilePage } from './pages/Profile';
 import { NotificationsHistoryPage } from './pages/NotificationsHistory';
 import { ChatPage } from './pages/Chat';
+import { PlansPage } from './pages/Plans';
 
 // Admin Pages
 import { AdminOverviewPage } from './pages/AdminOverview';
@@ -26,6 +27,7 @@ import { AdminAnalyticsPage } from './pages/AdminAnalytics';
 import { AdminLogsPage } from './pages/AdminLogs';
 import { AdminAlertsPage } from './pages/AdminAlerts';
 import { AdminNotificationsPanel } from './pages/AdminNotifications';
+import { usePlanStore } from './store/planStore';
 
 const AdminPage = AdminOverviewPage;
 
@@ -88,6 +90,18 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 function App() {
   const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
   const { user } = useAppStore();
+  const { fetchPlans, fetchUserPlan, fetchFeatures } = usePlanStore();
+
+  useEffect(() => {
+    fetchPlans();
+    fetchFeatures();
+  }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchUserPlan();
+    }
+  }, [user?.id]);
   
   return (
     <BrowserRouter basename={basename}>
@@ -168,6 +182,15 @@ function App() {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/planos"
+          element={
+            <ProtectedRoute>
+              <PlansPage />
             </ProtectedRoute>
           }
         />

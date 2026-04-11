@@ -33,6 +33,7 @@ export function AdminUsersPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
 const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState<{ password: string; email: string; name: string } | null>(null);

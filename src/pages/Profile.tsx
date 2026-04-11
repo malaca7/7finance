@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useTheme } from '../components/ThemeContext';
 import Cropper from 'react-easy-crop';
 import { 
   User as UserIcon, 
@@ -10,13 +9,14 @@ import {
   Crop as CropIcon,
   Shield,
   Plus,
-  Trash2,
-  Settings2
+  Trash2
 } from 'lucide-react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { Card, Button, Input, Select, Modal } from '../components/ui';
 import { useAppStore } from '../store';
 import { usersApi, veiculosApi } from '../api';
+import { PlanBadge } from '../components/plans';
+import { usePlanAccess } from '../hooks/usePlanAccess';
 import { clsx } from 'clsx';
 import type { DriverType } from '../types';
 import toast from 'react-hot-toast';
@@ -47,10 +47,7 @@ export function ProfilePage() {
     telefone: '',
     tipo: 'app' as DriverType,
     foto_url: '',
-    theme: 'dark' as 'dark' | 'light',
   });
-
-  const { theme, setTheme } = useTheme();
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -62,12 +59,10 @@ export function ProfilePage() {
         telefone: user.telefone || user.phone || '',
         tipo: (user.tipo || user.role || 'app') as DriverType,
         foto_url: user.foto_url || user.avatar_url || '',
-        theme: user.theme || 'dark',
       });
-      if (user.theme) setTheme(user.theme);
       fetchVeiculos();
     }
-  }, [user, setTheme]);
+  }, [user]);
 
   const fetchVeiculos = async () => {
     const response = await veiculosApi.getAll();
@@ -204,7 +199,6 @@ export function ProfilePage() {
           ...state,
           user: response.data
         }));
-        setTheme(formData.theme);
         toast.success('Perfil atualizado com sucesso!');
       } else {
         toast.error(response.error || 'Erro ao atualizar perfil');
@@ -222,7 +216,10 @@ export function ProfilePage() {
     <MainLayout>
       <div className="max-w-2xl mx-auto space-y-6 pb-24 lg:pb-8">
         <header>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Meu <span className="text-premium-gold">Perfil</span></h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-white tracking-tight">Meu <span className="text-premium-gold">Perfil</span></h1>
+            <PlanBadge plan={usePlanAccess().planName} />
+          </div>
           <p className="text-gray-400 text-sm">Gerencie suas informações pessoais</p>
         </header>
 
@@ -328,22 +325,7 @@ export function ProfilePage() {
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
-                    <Settings2 className="w-3 h-3" /> Tema do sistema
-                  </label>
-                  <Select
-                    value={formData.theme}
-                    onChange={e => {
-                      setFormData({ ...formData, theme: e.target.value as 'dark' | 'light' });
-                      setTheme(e.target.value as 'dark' | 'light');
-                    }}
-                    options={[
-                      { value: 'dark', label: 'Escuro (padrão)' },
-                      { value: 'light', label: 'Claro' },
-                    ]}
-                  />
-                </div>
+
               </div>
             </div>
           </Card>

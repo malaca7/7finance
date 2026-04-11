@@ -241,25 +241,85 @@ export interface PricingAnalysis {
 }
 
 // ============== PLANOS E ASSINATURAS ==============
-export type PlanType = 'free' | 'premium' | 'enterprise';
+export type PlanType = 'free' | 'pro' | 'premium';
+export type PlanStatus = 'ativo' | 'cancelado' | 'trial' | 'expirado' | 'pendente';
+export type PlanPeriod = 'mensal' | 'anual';
 
-export interface Subscription {
-  id: number;
-  usuario_id?: string;
-  plano: PlanType;
-  status: 'ativa' | 'cancelada' | 'trial' | 'expirada';
-  data_inicio: string;
-  data_fim?: string;
+export interface Plan {
+  id: string;
+  nome: PlanType;
+  nome_display: string;
+  descricao?: string;
+  preco: number;
+  preco_anual?: number;
+  stripe_price_id?: string;
+  stripe_price_id_anual?: string;
+  features: PlanFeatureItem[];
+  is_active: boolean;
+  ordem: number;
   created_at?: string;
+}
+
+export interface PlanFeatureItem {
+  key: string;
+  label: string;
+}
+
+export interface UserPlan {
+  id: string;
+  user_id: string;
+  plano_id: string;
+  status: PlanStatus;
+  periodo: PlanPeriod;
+  inicio_em?: string;
+  fim_em?: string;
+  trial_fim_em?: string;
+  stripe_subscription_id?: string;
+  stripe_customer_id?: string;
+  cancelado_em?: string;
+  motivo_cancelamento?: string;
+  created_at?: string;
+  // Join
+  planos?: Plan;
+}
+
+export interface UserActivePlan {
+  subscription_id: string | null;
+  plano_id: string;
+  plano_nome: PlanType;
+  plano_display: string;
+  preco: number;
+  preco_anual?: number;
+  status: PlanStatus | 'sem_plano';
+  periodo?: PlanPeriod;
+  inicio_em?: string;
+  fim_em?: string;
+  features: PlanFeatureItem[];
 }
 
 export interface PlanFeature {
   id: string;
+  feature_key: string;
   nome: string;
-  descricao: string;
-  plano_free: boolean;
-  plano_premium: boolean;
+  descricao?: string;
+  plano_minimo: PlanType;
 }
+
+export interface PlanChangeResult {
+  success: boolean;
+  subscription_id?: string;
+  change_type?: 'upgrade' | 'downgrade' | 'cancelamento' | 'reativacao' | 'trial';
+  old_plan?: string;
+  new_plan?: string;
+  error?: string;
+}
+
+// Hierarquia de planos (para comparação)
+export const PLAN_HIERARCHY: Record<PlanType, number> = {
+  free: 0,
+  pro: 1,
+  premium: 2,
+};
 
 // ============== ALERTAS DO SISTEMA ==============
 export interface SystemAlert {

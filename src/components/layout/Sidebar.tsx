@@ -12,7 +12,13 @@ import {
   MessageCircle,
   User,
   Bell,
-  ChevronDown
+  ChevronDown,
+  Crown,
+  Users,
+  BarChart3,
+  FileText,
+  AlertTriangle,
+  Send
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store';
@@ -37,6 +43,7 @@ const personalCategories: MenuCategory[] = [
     items: [
       { path: '/dashboard', label: 'Início', icon: LayoutDashboard },
       { path: '/perfil', label: 'Perfil', icon: User },
+      { path: '/planos', label: 'Planos', icon: Crown },
     ],
   },
   {
@@ -69,7 +76,12 @@ const adminCategory: MenuCategory = {
   title: 'Moderação',
   icon: Settings,
   items: [
-    { path: '/admin', label: 'Administração', icon: Settings },
+    { path: '/admin', label: 'Visão Geral', icon: LayoutDashboard },
+    { path: '/admin/users', label: 'Usuários', icon: Users },
+    { path: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+    { path: '/admin/logs', label: 'Logs', icon: FileText },
+    { path: '/admin/alerts', label: 'Alertas', icon: AlertTriangle },
+    { path: '/admin/notifications', label: 'Notificações', icon: Send },
   ],
 };
 
@@ -82,7 +94,9 @@ export function Sidebar() {
   });
 
   const [expandedCategories, setExpandedCategories] = useState<string[]>(() => {
-    return personalCategories.map(c => c.title);
+    const cats = personalCategories.map(c => c.title);
+    cats.push(adminCategory.title);
+    return cats;
   });
 
   useEffect(() => {

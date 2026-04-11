@@ -10,19 +10,24 @@ interface ThemeContextProps {
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setThemeState] = useState<Theme>(() => {
+    const saved = localStorage.getItem('7finance_theme');
+    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+  });
+
+  const setTheme = (t: Theme) => {
+    setThemeState(t);
+    localStorage.setItem('7finance_theme', t);
+  };
 
   useEffect(() => {
+    const root = document.documentElement;
     if (theme === 'dark') {
-      document.body.classList.add('dark');
-      document.body.classList.remove('light');
-      document.body.style.backgroundColor = '#0A0F1C';
-      document.body.style.color = '#F0F4FF';
+      root.classList.add('dark');
+      root.classList.remove('light');
     } else {
-      document.body.classList.add('light');
-      document.body.classList.remove('dark');
-      document.body.style.backgroundColor = '#0A0F1C';
-      document.body.style.color = '#F0F4FF';
+      root.classList.add('light');
+      root.classList.remove('dark');
     }
   }, [theme]);
 

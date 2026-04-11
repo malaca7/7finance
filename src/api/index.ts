@@ -1,5 +1,6 @@
 import { 
-  User, DateFilter, Earnings, Expense, Maintenance, KmRegistry, ApiResponse
+  User, DateFilter, Earnings, Expense, Maintenance, KmRegistry, ApiResponse,
+  Goal, GoalProgress, Insight, PricingAnalysis, PlanType, PlanFeature, UserPlan
 } from '../types';
 import { supabase } from './supabase';
 
@@ -921,70 +922,63 @@ export const pricingApi = {
   }
 };
 
-// ============== ASSINATURAS E PLANOS ==============
+// ============== ASSINATURAS E PLANOS (Legacy - usar plansApi para novo sistema) ==============
+// Re-export do novo sistema de planos
+export { plansApi } from './plans';
+
 export const subscriptionApi = {
-  async getCurrent(): Promise<ApiResponse<Subscription>> {
+  async getCurrent(): Promise<ApiResponse<any>> {
     try {
       const userId = await getMyUserId();
       if (!userId) return { success: false, error: 'Usuário não autenticado' };
 
       const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('usuario_id', userId)
-        .in('status', ['ativa', 'trial'])
-        .order('data_inicio', { ascending: false })
+        .from('user_planos')
+        .select('*, planos(*)')
+        .eq('user_id', userId)
+        .eq('status', 'ativo')
+        .order('inicio_em', { ascending: false })
         .limit(1)
         .single();
 
       if (error || !data) {
-        // Usuário free por padrão
         return {
           success: true,
           data: {
-            id: 0,
-            usuario_id: userId,
+            id: '0',
+            user_id: userId,
             plano: 'free',
-            status: 'ativa',
-            data_inicio: new Date().toISOString()
-          } as Subscription
+            status: 'ativo',
+            inicio_em: new Date().toISOString()
+          }
         };
       }
 
-      return { success: true, data: data as Subscription };
+      return { success: true, data };
     } catch (e: any) {
       return { success: false, error: e.message };
     }
   },
 
-  async upgrade(plano: PlanType): Promise<ApiResponse<Subscription>> {
+  async upgrade(plano: PlanType): Promise<ApiResponse<any>> {
     try {
       const userId = await getMyUserId();
       if (!userId) return { success: false, error: 'Usuário não autenticado' };
 
-      const dataFim = new Date();
-      dataFim.setMonth(dataFim.getMonth() + 1);
-
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .upsert({
-          usuario_id: userId,
-          plano,
-          status: 'ativa',
-          data_inicio: new Date().toISOString(),
-          data_fim: dataFim.toISOString()
-        }, { onConflict: 'usuario_id' })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('change_user_plan', {
+        p_user_id: userId,
+        p_new_plan_name: plano,
+        p_periodo: 'mensal',
+      });
 
       if (error) return { success: false, error: error.message };
-      return { success: true, data: data as Subscription };
+      return { success: true, data };
     } catch (e: any) {
       return { success: false, error: e.message };
     }
   },
 
-  getFeatures(): PlanFeature[] {
+  getFeatures(): { id: string; nome: string; descricao: string; plano_free: boolean; plano_premium: boolean }[] {
     return [
       { id: 'dashboard', nome: 'Dashboard', descricao: 'Visualização básica do dashboard', plano_free: true, plano_premium: true },
       { id: 'metas', nome: 'Metas Financeiras', descricao: 'Defina e acompanhe suas metas mensais', plano_free: true, plano_premium: true },
@@ -997,10 +991,11 @@ export const subscriptionApi = {
     ];
   },
 
-  hasAccess(subscription: Subscription | null, featureId: string): boolean {
+  hasAccess(subscription: any, featureId: string): boolean {
     const features = subscriptionApi.getFeatures();
     const feature = features.find(f => f.id === featureId);
     if (!feature) return false;
-    return subscription?.plano === 'premium' ? feature.plano_premium : feature.plano_free;
+    const plano = subscription?.planos?.nome || subscription?.plano || 'free';
+    return plano === 'premium' || plano === 'pro' ? feature.plano_premium : feature.plano_free;
   }
 };

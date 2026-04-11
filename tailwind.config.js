@@ -8,10 +8,10 @@ export default {
     extend: {
       colors: {
         premium: {
-          black: '#0A0F1C',
-          dark: '#111827',
-          darkGray: '#1F2937',
-          gray: '#374151',
+          black: 'var(--bg-main)',
+          dark: 'var(--bg-card)',
+          darkGray: 'var(--bg-card-gray)',
+          gray: 'var(--bg-gray)',
           lightGray: '#6B7280',
           gold: '#D4AF37',
         },
@@ -20,7 +20,7 @@ export default {
         accent: '#065F46',
         positive: '#22C55E',
         negative: '#EF4444',
-        neutral: '#6B7280',
+        neutral: 'var(--text-muted)',
       },
       backgroundImage: {
         'main-gradient': 'linear-gradient(135deg, #22C55E 0%, #16A34A 50%, #065F46 100%)',
