@@ -155,7 +155,7 @@ export function VehiclesPage() {
           </h1>
           <p className="text-neutral text-sm mt-1">{veiculos.length} veículo{veiculos.length !== 1 ? 's' : ''} cadastrado{veiculos.length !== 1 ? 's' : ''}</p>
         </div>
-        <Button onClick={openNewModal} className="flex items-center gap-2">
+        <Button onClick={openNewModal} className="hidden sm:flex items-center gap-2">
           <Plus className="w-4 h-4" />
           Adicionar Veículo
         </Button>
@@ -416,6 +416,15 @@ export function VehiclesPage() {
           </div>
         </form>
       </Modal>
+
+      {/* FAB mobile - botão flutuante acima da bottom nav */}
+      <button
+        onClick={openNewModal}
+        className="sm:hidden fixed right-4 bottom-24 z-50 w-14 h-14 rounded-full bg-primary text-premium-black shadow-lg shadow-primary/30 flex items-center justify-center active:scale-95 transition-transform"
+        aria-label="Adicionar Veículo"
+      >
+        <Plus className="w-6 h-6" strokeWidth={3} />
+      </button>
     </MainLayout>
   );
 }
