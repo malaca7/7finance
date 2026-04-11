@@ -82,6 +82,7 @@ export interface KmRegistry {
 export interface Veiculo {
   id: number;
   usuario_id?: string;
+  marca?: string;
   modelo: string;
   placa?: string;
   cor?: string;

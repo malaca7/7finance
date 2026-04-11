@@ -18,7 +18,8 @@ import {
   BarChart3,
   FileText,
   AlertTriangle,
-  Send
+  Send,
+  Car
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store';
@@ -57,6 +58,7 @@ const personalCategories: MenuCategory[] = [
     title: 'Meus Carros',
     icon: Wrench,
     items: [
+      { path: '/veiculos', label: 'Veículos', icon: Car },
       { path: '/km', label: 'KM', icon: Gauge },
       { path: '/manutencao', label: 'Carro', icon: Wrench },
     ],

@@ -23,6 +23,7 @@ import { ChatPage } from './pages/Chat';
 import { PlansPage } from './pages/Plans';
 import { UserProfilePage } from './pages/UserProfile';
 import { FollowListPage } from './pages/FollowList';
+import { VehiclesPage } from './pages/Vehicles';
 
 // Admin Pages
 import { AdminOverviewPage } from './pages/AdminOverview';
@@ -189,6 +190,15 @@ function App() {
           element={
             <ProtectedRoute>
               <MaintenancePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/veiculos"
+          element={
+            <ProtectedRoute>
+              <VehiclesPage />
             </ProtectedRoute>
           }
         />

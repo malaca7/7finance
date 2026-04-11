@@ -8,8 +8,6 @@ import {
   Hash,
   Crop as CropIcon,
   Shield,
-  Plus,
-  Trash2,
   Edit2,
   Lock,
   Eye,
@@ -25,7 +23,7 @@ import {
 import { MainLayout } from '../components/layout/MainLayout';
 import { Card, Button, Input, Select, Modal } from '../components/ui';
 import { useAppStore } from '../store';
-import { usersApi, veiculosApi } from '../api';
+import { usersApi } from '../api';
 import { supabase } from '../api/supabase';
 import { PlanBadge } from '../components/plans';
 import { usePlanAccess } from '../hooks/usePlanAccess';
@@ -37,14 +35,6 @@ import toast from 'react-hot-toast';
 export function ProfilePage() {
   const { user } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [veiculos, setVeiculos] = useState<any[]>([]);
-  const [isVeiculoModalOpen, setIsVeiculoModalOpen] = useState(false);
-  const [editingVeiculo, setEditingVeiculo] = useState<any>({
-    modelo: '',
-    placa: '',
-    cor: '',
-    ano: null
-  });
   
   // Crop state
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -92,47 +82,8 @@ export function ProfilePage() {
       setPublicUserlink(user.userlink || '');
       setPublicBio(user.bio || '');
       if (user.userlink) setUserlinkStatus('available');
-      fetchVeiculos();
     }
   }, [user]);
-
-  const fetchVeiculos = async () => {
-    const response = await veiculosApi.getAll();
-    if (response.success && response.data) {
-      setVeiculos(response.data);
-    }
-  };
-
-  const handleSaveVeiculo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const veiculoData = {
-      modelo: editingVeiculo.modelo,
-      placa: editingVeiculo.placa.toUpperCase(),
-      cor: editingVeiculo.cor || null,
-      ano: Number(editingVeiculo.ano) || null,
-    };
-
-    const response = editingVeiculo.id 
-      ? await veiculosApi.update(editingVeiculo.id, veiculoData)
-      : await veiculosApi.create(veiculoData);
-
-    if (response.success) {
-      toast.success(editingVeiculo.id ? 'Veículo atualizado!' : 'Veículo adicionado!');
-      setIsVeiculoModalOpen(false);
-      fetchVeiculos();
-    } else {
-      toast.error(response.error || 'Erro ao salvar veículo');
-    }
-  };
-
-  const handleDeleteVeiculo = async (id: number) => {
-    if (!confirm('Deseja realmente excluir este veículo?')) return;
-    const response = await veiculosApi.delete(id);
-    if (response.success) {
-      toast.success('Veículo removido');
-      fetchVeiculos();
-    }
-  };
 
   const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -685,60 +636,23 @@ export function ProfilePage() {
           </Card>
         </div>
 
-        {/* Veículos Section */}
+        {/* Link para Veículos */}
         <div className="mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">Meus Veículos</h2>
-            <Button 
-              onClick={() => {
-                setEditingVeiculo(null);
-                setIsVeiculoModalOpen(true);
-              }}
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Adicionar Veículo
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {veiculos.length === 0 ? (
-              <p className="text-gray-400 text-sm text-center py-4 border border-premium-gray/30 rounded-lg">
-                Nenhum veículo cadastrado. Adicione um veículo usando o botão acima.
-              </p>
-            ) : (
-              veiculos.map((veiculo) => (
-                <div key={veiculo.id} className="bg-premium-dark rounded-lg p-4 flex flex-col sm:flex-row gap-4 border border-premium-gray/30">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-white truncate">{veiculo.modelo}</h3>
-                    <p className="text-sm text-gray-400 truncate">{veiculo.placa}</p>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={() => {
-                        setEditingVeiculo(veiculo);
-                        setIsVeiculoModalOpen(true);
-                      }}
-                      variant="primary"
-                      className="flex-1"
-                    >
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Editar
-                    </Button>
-                    <Button 
-                      variant="primary" 
-                      onClick={() => handleDeleteVeiculo(veiculo.id)} 
-                      className="flex-1"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Remover
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <Link
+            to="/veiculos"
+            className="flex items-center justify-between p-4 rounded-xl border border-premium-gray/30 bg-premium-dark hover:border-primary/30 transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Edit2 className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold">Meus Veículos</h3>
+                <p className="text-neutral text-xs">Gerenciar veículos, marcas, modelos e mais</p>
+              </div>
+            </div>
+            <ExternalLink className="w-4 h-4 text-neutral group-hover:text-primary transition-colors" />
+          </Link>
         </div>
       </div>
 
@@ -798,68 +712,6 @@ export function ProfilePage() {
             </Button>
           </div>
         </div>
-      </Modal>
-
-      {/* Modal de Veículo */}
-      <Modal
-        isOpen={isVeiculoModalOpen}
-        onClose={() => setIsVeiculoModalOpen(false)}
-        title={editingVeiculo ? "Editar Veículo" : "Adicionar Veículo"}
-      >
-        <form onSubmit={handleSaveVeiculo} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase">Modelo do Veículo</label>
-              <Input 
-                value={editingVeiculo?.modelo}
-                onChange={(e) => setEditingVeiculo({...editingVeiculo, modelo: e.target.value})}
-                placeholder="Ex: Toyota Corolla"
-                required
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase">Placa</label>
-              <Input 
-                value={editingVeiculo?.placa}
-                onChange={(e) => setEditingVeiculo({...editingVeiculo, placa: e.target.value})}
-                placeholder="ABC-1234"
-                maxLength={8}
-                required
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase">Status</label>
-              <Select 
-                value={editingVeiculo?.status || 'ativo'}
-                onChange={(e) => setEditingVeiculo({...editingVeiculo, status: e.target.value})}
-                options={[
-                  { value: 'ativo', label: 'Ativo' },
-                  { value: 'inativo', label: 'Inativo' },
-                ]}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => setIsVeiculoModalOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              className="flex-1 font-bold"
-              type="submit"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {editingVeiculo ? 'Salvar Alterações' : 'Adicionar Veículo'}
-            </Button>
-          </div>
-        </form>
       </Modal>
     </MainLayout>
   );
