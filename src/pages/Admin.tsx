@@ -505,20 +505,24 @@ export function AdminPage() {
                           </td>
                           <td className="p-4 text-right">
                             <div className="flex justify-end gap-2">
-                              <button 
+                              <Button 
                                 onClick={() => openUserModal(user)}
-                                className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                                variant="primary"
+                                size="sm"
+                                className="p-2 rounded-lg transition-all"
                                 title="Editar"
                               >
                                 <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button 
+                              </Button>
+                              <Button 
                                 onClick={() => { setUserToDelete(user.id); setIsDeleteModalOpen(true); }}
-                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                variant="danger"
+                                size="sm"
+                                className="p-2 rounded-lg transition-all"
                                 title="Excluir"
                               >
                                 <Trash2 className="w-4 h-4" />
-                              </button>
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -532,8 +536,8 @@ export function AdminPage() {
               <div className="p-4 border-t border-premium-gray/30 flex items-center justify-between bg-premium-dark/50">
                 <span className="text-xs text-gray-500">Mostrando {filteredUsers.length} de {allUsers.length} usuários</span>
                 <div className="flex gap-2">
-                  <button className="px-3 py-1 bg-premium-gray/50 hover:bg-premium-gray text-white text-xs rounded transition-all disabled:opacity-30">Anterior</button>
-                  <button className="px-3 py-1 bg-gradient-to-r from-primary via-accent to-primary text-premium-black text-xs font-bold rounded transition-all shadow-[0_0_8px_#39FF14]">Próxima</button>
+                  <Button variant="primary" size="sm" className="px-3 py-1 text-xs rounded transition-all disabled:opacity-30">Anterior</Button>
+                  <Button variant="primary" size="sm" className="px-3 py-1 text-xs font-bold rounded transition-all shadow-[0_0_8px_#39FF14]">Próxima</Button>
                 </div>
               </div>
             </Card>
