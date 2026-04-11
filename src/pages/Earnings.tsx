@@ -171,7 +171,7 @@ export function EarningsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6 pb-32 md:pb-0">
+      <div className="space-y-6 pb-24 md:pb-0">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Ganhos</h1>
@@ -406,7 +406,7 @@ export function EarningsPage() {
         variant="danger"
       />
 
-      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-30 w-full px-4 flex justify-center">
+      <div className="md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-30 w-full px-4 flex justify-center">
         <Button 
           onClick={() => openModal()} 
           variant="primary"

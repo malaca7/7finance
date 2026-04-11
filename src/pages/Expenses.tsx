@@ -181,7 +181,7 @@ export function ExpensesPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6 pb-40 md:pb-8">
+      <div className="space-y-6 pb-24 md:pb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Despesas</h1>
@@ -422,7 +422,7 @@ export function ExpensesPage() {
         variant="danger"
       />
 
-      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-30 w-full px-4 flex justify-center text-center">
+      <div className="md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-30 w-full px-4 flex justify-center text-center">
         <Button 
           onClick={() => openModal()} 
           variant="primary"
