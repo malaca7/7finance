@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { 
   Users, Search, Plus, Edit2, Trash2, Activity, DollarSign, History, Zap,
-  Key, Crown, Eye, EyeOff
+  Key, Crown, Eye, EyeOff, Copy, Check
 } from 'lucide-react';
 import { Card, CardHeader, Button, Input, Select, Modal, ConfirmModal } from '../components/ui';
 import { MainLayout } from '../components/layout/MainLayout';
@@ -41,6 +41,7 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState<{ password: string; email: string; name: string } | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, string>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const [formNome, setFormNome] = useState('');
   const [formEmail, setFormEmail] = useState('');
@@ -417,13 +418,27 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                           <code className="text-xs font-mono text-gray-400 bg-premium-black px-2 py-1 rounded min-w-[80px] text-center">
                             {visiblePasswords[user.id] || '••••••••'}
                           </code>
-                          {visiblePasswords[user.id] ? (
-                            <button
-                              onClick={() => setVisiblePasswords(prev => { const n = {...prev}; delete n[user.id]; return n; })}
-                              className="p-1.5 rounded-lg text-neutral hover:text-white hover:bg-white/5 transition-all"
-                              title="Ocultar senha"
-                            >
-                              <EyeOff className="w-3.5 h-3.5" />
+                          {vidiv className="flex items-center gap-1">
+                              <button
+                                onClick={() => setVisiblePasswords(prev => { const n = {...prev}; delete n[user.id]; return n; })}
+                                className="p-1.5 rounded-lg text-neutral hover:text-white hover:bg-white/5 transition-all outline-none"
+                                title="Ocultar senha"
+                              >
+                                <EyeOff className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(visiblePasswords[user.id]);
+                                  setCopiedId(user.id);
+                                  toast.success('Copiado!');
+                                  setTimeout(() => setCopiedId(null), 2000);
+                                }}
+                                className="p-1.5 rounded-lg text-neutral hover:text-white hover:bg-white/5 transition-all outline-none"
+                                title="Copiar senha"
+                              >
+                                {copiedId === user.id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                              </button>
+                            </divf className="w-3.5 h-3.5" />
                             </button>
                           ) : (
                             <button
