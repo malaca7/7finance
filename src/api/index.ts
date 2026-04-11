@@ -295,8 +295,22 @@ export const usersApi = {
     return { success: true, data: adaptUser(result) };
   },
   async delete(id: string | number) {
-    const { error } = await supabase.from('users').delete().eq('id', id);
-    return apiResponse<void>(null, error);
+    const { createAdminClient } = await import('./supabase');
+    const adminClient = await createAdminClient();
+    
+    // Buscar auth_id antes de deletar
+    const { data: userData } = await adminClient.from('users').select('auth_id').eq('id', id).single();
+    
+    // Deletar dados relacionados e o usuário
+    const { error } = await adminClient.from('users').delete().eq('id', id);
+    if (error) return apiResponse<void>(null, error);
+    
+    // Deletar do Supabase Auth também
+    if (userData?.auth_id) {
+      await adminClient.auth.admin.deleteUser(userData.auth_id);
+    }
+    
+    return { success: true, data: undefined };
   },
   async resetPassword(userId: string | number, customPassword?: string): Promise<ApiResponse<{ newPassword: string; email: string; name: string }>> {
     try {
