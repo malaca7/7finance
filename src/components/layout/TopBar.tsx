@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Sun, Moon, Maximize, Minimize, ChevronDown, User, LogOut, Shield, LayoutDashboard, Users, BarChart3, FileText, AlertTriangle, Send } from 'lucide-react';
+import { Bell, Sun, Moon, Maximize, Minimize, ChevronDown, User, LogOut, Shield, LayoutDashboard, Users, BarChart3, FileText, AlertTriangle, Send, Crown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store';
 import { usePlanStore } from '../../store/planStore';
@@ -24,6 +24,7 @@ export function TopBar() {
     { path: '/admin/logs', label: 'Logs', icon: FileText },
     { path: '/admin/alerts', label: 'Alertas', icon: AlertTriangle },
     { path: '/admin/notifications', label: 'Notificações', icon: Send },
+    { path: '/admin/plans', label: 'Planos', icon: Crown },
   ];
 
   const planDisplay = userPlan?.plano_display || 'Free';

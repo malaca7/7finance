@@ -83,6 +83,7 @@ const adminCategory: MenuCategory = {
     { path: '/admin/logs', label: 'Logs', icon: FileText },
     { path: '/admin/alerts', label: 'Alertas', icon: AlertTriangle },
     { path: '/admin/notifications', label: 'Notificações', icon: Send },
+    { path: '/admin/plans', label: 'Planos', icon: Crown },
   ],
 };
 

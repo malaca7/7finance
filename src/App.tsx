@@ -32,6 +32,7 @@ import { AdminAnalyticsPage } from './pages/AdminAnalytics';
 import { AdminLogsPage } from './pages/AdminLogs';
 import { AdminAlertsPage } from './pages/AdminAlerts';
 import { AdminNotificationsPanel } from './pages/AdminNotifications';
+import { AdminPlansPage } from './pages/AdminPlans';
 import { usePlanStore } from './store/planStore';
 
 const AdminPage = AdminOverviewPage;
@@ -314,6 +315,15 @@ function App() {
           element={
             <AdminRoute>
               <AdminNotificationsPanel />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/plans"
+          element={
+            <AdminRoute>
+              <AdminPlansPage />
             </AdminRoute>
           }
         />
