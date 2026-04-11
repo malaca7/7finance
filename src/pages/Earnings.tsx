@@ -290,36 +290,52 @@ export function EarningsPage() {
               {earnings.map((earning) => (
                 <div 
                   key={earning.id} 
-                  className="flex items-center justify-between p-4 bg-premium-darkGray/50 rounded-full hover:bg-primary/10 hover:shadow-glow-green-sm transition-all duration-300 group"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-4 bg-premium-darkGray/50 rounded-3xl sm:rounded-full hover:bg-primary/10 hover:shadow-glow-green-sm transition-all duration-300 group gap-4"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-                      <TrendingUp className="w-5 h-5 text-primary" />
+                    <div className="w-12 h-12 sm:w-10 sm:h-10 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
+                      <TrendingUp className="w-6 h-6 sm:w-5 sm:h-5 text-primary" />
                     </div>
-                    <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
-                      <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">
-                        {getTypeLabel(earning.tipo)}
-                      </span>
-                      <span className="text-neutral text-sm">{displayLocaleDatetime(earning.data)}</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-0.5 bg-primary/20 text-primary rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider">
+                          {getTypeLabel(earning.tipo)}
+                        </span>
+                        {earning.descricao && (
+                          <span className="text-white/60 text-xs truncate max-w-[120px] sm:hidden italic">
+                            • {earning.descricao}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-neutral text-xs sm:text-sm">{displayLocaleDatetime(earning.data)}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <p className="text-xl font-bold text-primary">{formatCurrency(earning.valor)}</p>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-4 border-t border-white/5 pt-3 sm:pt-0 sm:border-0">
+                    <div className="flex flex-col sm:items-end">
+                      <p className="text-xl sm:text-xl font-black text-primary">
+                        {formatCurrency(earning.valor)}
+                      </p>
+                      {earning.descricao && (
+                        <span className="hidden sm:block text-neutral text-xs italic">{earning.descricao}</span>
+                      )}
+                    </div>
+                    
                     <div className="flex gap-1">
                       <button
                         onClick={() => openModal(earning)}
-                        className="p-2 text-neutral hover:text-white hover:bg-premium-darkGray rounded-full transition-all duration-200"
+                        className="p-3 sm:p-2 text-neutral hover:text-white bg-white/5 sm:bg-transparent hover:bg-premium-darkGray rounded-full transition-all duration-200"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-5 h-5 sm:w-4 sm:h-4" />
                       </button>
                       <button
                         onClick={() => {
                           setDeleteId(earning.id);
                           setIsDeleteModalOpen(true);
                         }}
-                        className="p-2 text-neutral hover:text-negative hover:bg-negative/10 rounded-full transition-all duration-200"
+                        className="p-3 sm:p-2 text-neutral hover:text-negative bg-white/5 sm:bg-transparent hover:bg-negative/10 rounded-full transition-all duration-200"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   </div>
