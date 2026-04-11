@@ -104,19 +104,8 @@ export function Sidebar() {
         {/* Desktop Sidebar */}
         <aside className={clsx(
           "hidden lg:flex sticky top-0 h-screen bg-premium-black border-r border-premium-gray/30 flex-col z-40 transition-all duration-300 ease-in-out shrink-0",
-          const adminMenuItems = [
-            { path: '/admin', label: 'Admin', icon: Users },
-          ];
-
-          export function Sidebar() {
-            const location = useLocation();
-            const navigate = useNavigate();
-            const { user, logout } = useAppStore();
-            const [isPersonalOpen, setIsPersonalOpen] = useState(true);
-            const [isAdminOpen, setIsAdminOpen] = useState(true);
-            const [isCollapsed, setIsCollapsed] = useState(() => {
-              return localStorage.getItem('sidebar_collapsed') === 'true';
-            });
+          isCollapsed ? "w-20" : "w-64"
+        )}>
 
             const isAdmin = user?.role === 'admin';
             const handleLogout = () => {
