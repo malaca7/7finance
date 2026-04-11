@@ -609,7 +609,7 @@ export function KmPage() {
             )}
             <Button
               type="button"
-              variant="secondary"
+              variant="primary"
               onClick={() => {
                 setIsModalOpen(false);
                 resetForm();
@@ -618,7 +618,7 @@ export function KmPage() {
             >
               Cancelar
             </Button>
-            <Button type="submit" isLoading={isLoading} className="flex-1">
+            <Button type="submit" isLoading={isLoading} variant="primary" className="flex-1">
               Salvar
             </Button>
           </div>

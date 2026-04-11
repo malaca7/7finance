@@ -261,7 +261,7 @@ export function MaintenancePage() {
                 ))}
               </select>
             )}
-            <Button onClick={() => openModal()} disabled={veiculos.length === 0}>
+            <Button onClick={() => openModal()} disabled={veiculos.length === 0} variant="primary">
               <Plus className="w-5 h-5 mr-2" />
               Nova Manutenção
             </Button>

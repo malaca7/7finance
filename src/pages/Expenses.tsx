@@ -445,7 +445,7 @@ export function ExpensesPage() {
           <div className="flex gap-3 pt-4">
             <Button
               type="button"
-              variant="secondary"
+              variant="primary"
               onClick={() => {
                 setIsModalOpen(false);
                 resetForm();
@@ -454,7 +454,7 @@ export function ExpensesPage() {
             >
               Cancelar
             </Button>
-            <Button type="submit" isLoading={isLoading} variant="danger" className="flex-1">
+            <Button type="submit" isLoading={isLoading} variant="primary" className="flex-1">
               {selectedExpense ? 'Salvar' : 'Cadastrar'}
             </Button>
           </div>
@@ -479,8 +479,8 @@ export function ExpensesPage() {
       <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-30 w-full px-4 flex justify-center text-center">
         <Button 
           onClick={() => openModal()} 
-          variant="danger"
-          className="h-14 px-8 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-2xl shadow-red-900/40 border border-red-400/20 active:scale-95 transition-all w-full max-w-sm font-bold text-lg"
+          variant="primary"
+          className="h-14 px-8 w-full max-w-sm font-bold text-lg"
         >
           <Plus className="w-6 h-6 mr-2" />
           <span>NOVA DESPESA</span>
@@ -501,9 +501,11 @@ export function ExpensesPage() {
           >
             <Plus className="w-5 h-5 group-hover:scale-125 transition-transform" />
             <span className="font-bold text-sm">NOVA DESPESA</span>
+          <Button 
+            onClick={() => openModal()} 
+            variant="primary"
+            className="h-14 px-6 flex items-center gap-2 group font-bold text-lg"
+          >
+            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+            <span>NOVA DESPESA</span>
           </Button>
-        </div>
-      </div>
-    </MainLayout>
-  );
-}

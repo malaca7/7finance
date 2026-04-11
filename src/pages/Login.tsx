@@ -178,11 +178,11 @@ export function LoginPage() {
               
               <Button
                 type="submit"
-                className="w-full mt-4 py-6 bg-gradient-to-r from-premium-gold/80 to-premium-gold hover:from-premium-gold hover:to-premium-gold/80 text-black font-bold tracking-widest transition-all duration-500 shadow-xl shadow-premium-gold/10 group overflow-hidden relative"
+                variant="primary"
+                className="w-full mt-4 py-6 font-bold tracking-widest transition-all duration-500 group overflow-hidden relative"
                 isLoading={isLoading}
               >
                 <span className="relative z-10">ENTRAR NO SISTEMA</span>
-                <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 slant" />
               </Button>
             </form>
           ) : (
@@ -263,7 +263,8 @@ export function LoginPage() {
               
               <Button
                 type="submit"
-                className="w-full mt-4 py-6 bg-gradient-to-r from-premium-gold/80 to-premium-gold text-black font-bold tracking-widest"
+                variant="primary"
+                className="w-full mt-4 py-6 font-bold tracking-widest"
                 isLoading={isLoading}
               >
                 CRIAR MINHA CONTA

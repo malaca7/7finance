@@ -431,7 +431,7 @@ export function EarningsPage() {
           <div className="flex gap-3 pt-4">
             <Button
               type="button"
-              variant="secondary"
+              variant="primary"
               onClick={() => {
                 setIsModalOpen(false);
                 resetForm();
@@ -440,7 +440,7 @@ export function EarningsPage() {
             >
               Cancelar
             </Button>
-            <Button type="submit" isLoading={isLoading} className="flex-1">
+            <Button type="submit" isLoading={isLoading} variant="primary" className="flex-1">
               {selectedEarning ? 'Salvar' : 'Cadastrar'}
             </Button>
           </div>
@@ -465,10 +465,11 @@ export function EarningsPage() {
       <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-30 w-full px-4 flex justify-center">
         <Button 
           onClick={() => openModal()} 
-          className="h-14 px-8 bg-green-600 hover:bg-green-500 text-white rounded-full shadow-2xl shadow-green-900/40 border border-green-400/20 active:scale-95 transition-all w-full max-w-sm"
+          variant="primary"
+          className="h-14 px-8 w-full max-w-sm font-bold text-lg"
         >
           <Plus className="w-6 h-6 mr-2" />
-          <span className="font-bold text-lg text-white">NOVO GANHO</span>
+          <span>NOVO GANHO</span>
         </Button>
       </div>
 
@@ -485,9 +486,11 @@ export function EarningsPage() {
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
             <span className="font-bold text-sm">NOVO GANHO</span>
+          <Button 
+            onClick={() => openModal()} 
+            variant="primary"
+            className="h-14 px-6 flex items-center gap-2 group font-bold text-lg"
+          >
+            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+            <span>NOVO GANHO</span>
           </Button>
-        </div>
-      </div>
-    </MainLayout>
-  );
-}
