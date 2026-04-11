@@ -60,7 +60,7 @@ export function Sidebar() {
       {/* Sidebar Desktop */}
       <aside
         className={clsx(
-          "hidden lg:flex fixed top-0 left-0 h-screen bg-premium-black border-r border-premium-gray/30 flex-col z-40 transition-all duration-300 ease-in-out shrink-0",
+          "hidden lg:flex fixed top-0 left-0 h-screen bg-premium-black border-r border-premium-gray/30 flex-col z-40 transition-all duration-300 ease-in-out shrink-0 overflow-y-auto",
           isCollapsed ? "w-20" : "w-64"
         )}
       >
