@@ -94,10 +94,18 @@ export function Sidebar() {
   });
 
   const [expandedCategories, setExpandedCategories] = useState<string[]>(() => {
+    const saved = sessionStorage.getItem('sidebar_categories');
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
     const cats = personalCategories.map(c => c.title);
     cats.push(adminCategory.title);
     return cats;
   });
+
+  useEffect(() => {
+    sessionStorage.setItem('sidebar_categories', JSON.stringify(expandedCategories));
+  }, [expandedCategories]);
 
   useEffect(() => {
     const handler = (e: any) => {

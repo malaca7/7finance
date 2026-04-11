@@ -1,13 +1,15 @@
 import { useEffect, useState, useMemo } from 'react';
 import { 
-  Users, Search, Plus, Edit2, Trash2, Activity, DollarSign, History, Zap
+  Users, Search, Plus, Edit2, Trash2, Activity, DollarSign, History, Zap,
+  Key, Crown
 } from 'lucide-react';
-import { Key } from 'lucide-react';
 import { Card, CardHeader, Button, Input, Select, Modal, ConfirmModal } from '../components/ui';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAppStore } from '../store';
 import { usersApi, adminApi, logsApi } from '../api';
-import type { User, UserRole, UserStatus } from '../types';
+import { plansApi } from '../api/plans';
+import { supabase } from '../api/supabase';
+import type { User, UserRole, UserStatus, PlanType, Plan } from '../types';
 import { clsx } from 'clsx';
 import toast from 'react-hot-toast';
 import { Link, useLocation } from 'react-router-dom';
@@ -45,17 +47,64 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [formStatus, setFormStatus] = useState<UserStatus>('ativo');
   const [formRole, setFormRole] = useState<UserRole>('user');
   const [formPassword, setFormPassword] = useState('');
+  const [formPlan, setFormPlan] = useState<PlanType>('free');
   const [isSaving, setIsSaving] = useState(false);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [userPlans, setUserPlans] = useState<Record<string, PlanType>>({});
+  const [changingPlan, setChangingPlan] = useState<string | null>(null);
 
   useEffect(() => {
     loadUsers();
+    loadPlans();
   }, []);
+
+  const loadPlans = async () => {
+    const res = await plansApi.getAll();
+    if (res.success && res.data) setPlans(res.data);
+  };
+
+  const loadUserPlans = async (users: User[]) => {
+    const { data } = await supabase
+      .from('user_planos')
+      .select('user_id, planos(nome)')
+      .eq('status', 'ativo');
+    if (data) {
+      const map: Record<string, PlanType> = {};
+      data.forEach((d: any) => { map[d.user_id] = d.planos?.nome || 'free'; });
+      setUserPlans(map);
+    }
+  };
+
+  const handleChangePlan = async (userId: string, newPlan: PlanType) => {
+    setChangingPlan(userId);
+    try {
+      const { data, error } = await supabase.rpc('change_user_plan', {
+        p_user_id: userId,
+        p_new_plan_name: newPlan,
+        p_periodo: 'mensal',
+      });
+      if (error) { toast.error(error.message); return; }
+      const result = data as any;
+      if (!result?.success) { toast.error(result?.error || 'Erro'); return; }
+      await logsApi.create('ALTERAR_PLANO', `Alterou plano do usuário ${userId} para ${newPlan}`);
+      toast.success(`Plano alterado para ${newPlan.toUpperCase()}`);
+      setUserPlans(prev => ({ ...prev, [userId]: newPlan }));
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao alterar plano');
+    } finally {
+      setChangingPlan(null);
+    }
+  };
 
   const loadUsers = async () => {
     setIsLoading(true);
     try {
       const res = await usersApi.getAll();
-      if (res.success) setAllUsers((res.data as User[]) || []);
+      if (res.success) {
+        const users = (res.data as User[]) || [];
+        setAllUsers(users);
+        loadUserPlans(users);
+      }
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
@@ -86,6 +135,7 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
       setFormStatus((user.status || (user.is_active === false ? 'inativo' : 'ativo')) as UserStatus);
       setFormRole(user.role as UserRole);
       setFormPassword('');
+      setFormPlan(userPlans[user.id] || 'free');
     } else {
       setSelectedUser(null);
       setFormNome('');
@@ -94,6 +144,7 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
       setFormStatus('ativo');
       setFormRole('user');
       setFormPassword('');
+      setFormPlan('free');
     }
     setIsUserModalOpen(true);
   };
@@ -117,6 +168,11 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
         };
         res = await usersApi.update(selectedUser.id, userData);
         if (res.success) {
+          // Alterar plano se mudou
+          const currentPlan = userPlans[selectedUser.id] || 'free';
+          if (formPlan !== currentPlan) {
+            await handleChangePlan(selectedUser.id, formPlan);
+          }
           await logsApi.create('EDITAR_USUARIO', `Editou usuário "${formNome}" (${selectedUser.id})`);
           toast.success('Usuário atualizado com sucesso!');
         }
@@ -293,6 +349,7 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                   <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Telefone</th>
                   <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Perfil</th>
                   <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                  <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Plano</th>
                   <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Cadastro</th>
                   <th className="text-right p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Ações</th>
                 </tr>
@@ -300,7 +357,7 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
               <tbody className="divide-y divide-premium-gray/20">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-500">Nenhum usuário encontrado</td>
+                    <td colSpan={7} className="p-8 text-center text-gray-500">Nenhum usuário encontrado</td>
                   </tr>
                 ) : (
                   filteredUsers.map(user => (
@@ -334,6 +391,24 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                         )}>
                           {(user.status || (user.is_active === false ? 'inativo' : 'ativo')).replace('_', ' ')}
                         </span>
+                      </td>
+                      <td className="p-4">
+                        <select
+                          value={userPlans[user.id] || 'free'}
+                          onChange={(e) => handleChangePlan(user.id, e.target.value as PlanType)}
+                          disabled={changingPlan === user.id}
+                          className={clsx(
+                            "text-xs font-bold uppercase px-2 py-1.5 rounded-lg border-0 cursor-pointer transition-all",
+                            changingPlan === user.id && "opacity-50",
+                            (userPlans[user.id] || 'free') === 'premium' ? 'bg-amber-500/20 text-amber-400' :
+                            (userPlans[user.id] || 'free') === 'pro' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-gray-500/20 text-gray-400'
+                          )}
+                        >
+                          <option value="free">Free</option>
+                          <option value="pro">Pro</option>
+                          <option value="premium">Premium</option>
+                        </select>
                       </td>
                       <td className="p-4">
                         <p className="text-xs text-gray-500">{user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '-'}</p>
@@ -421,6 +496,32 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
               />
             </div>
             
+            {selectedUser && (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">Plano</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['free', 'pro', 'premium'] as PlanType[]).map(plan => (
+                    <button
+                      key={plan}
+                      type="button"
+                      onClick={() => setFormPlan(plan)}
+                      className={clsx(
+                        "py-2.5 px-3 rounded-xl text-sm font-bold uppercase border-2 transition-all",
+                        formPlan === plan
+                          ? plan === 'premium' ? 'border-amber-500 bg-amber-500/20 text-amber-400'
+                          : plan === 'pro' ? 'border-blue-500 bg-blue-500/20 text-blue-400'
+                          : 'border-gray-500 bg-gray-500/20 text-gray-300'
+                        : 'border-transparent bg-premium-darkGray/50 text-gray-500 hover:bg-premium-darkGray'
+                      )}
+                    >
+                      {plan === 'premium' && <Crown className="w-3.5 h-3.5 inline mr-1" />}
+                      {plan}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {!selectedUser ? (
               <Input 
                 label="Senha Inicial" 

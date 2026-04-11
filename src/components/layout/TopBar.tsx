@@ -1,14 +1,31 @@
-import { useState } from 'react';
-import { Bell, Sun, Moon, Maximize, Minimize, Search } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Bell, Sun, Moon, Maximize, Minimize, ChevronDown, User, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store';
+import { usePlanStore } from '../../store/planStore';
 import { useTheme } from '../ThemeContext';
 import { clsx } from 'clsx';
 
 export function TopBar() {
-  const { user } = useAppStore();
+  const { user, logout } = useAppStore();
+  const { userPlan } = usePlanStore();
   const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const planDisplay = userPlan?.plano_display || 'Free';
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -59,20 +76,60 @@ export function TopBar() {
         {/* Divider */}
         <div className="w-px h-6 bg-white/10 mx-1" />
 
-        {/* Avatar */}
-        <Link to="/perfil" className="flex items-center gap-2 p-1 rounded-xl hover:bg-white/5 transition-all duration-200">
-          {user?.avatar_url || user?.foto_url ? (
-            <img
-              src={user.avatar_url || user.foto_url}
-              alt="Avatar"
-              className="w-8 h-8 rounded-full object-cover border border-white/10"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold">
-              {(user?.nome || user?.name || '?')[0]?.toUpperCase()}
+        {/* User Menu */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="flex items-center gap-2.5 p-1.5 pr-3 rounded-xl hover:bg-white/5 transition-all duration-200"
+          >
+            {user?.avatar_url || user?.foto_url ? (
+              <img
+                src={user.avatar_url || user.foto_url}
+                alt="Avatar"
+                className="w-8 h-8 rounded-full object-cover border border-white/10"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold shrink-0">
+                {(user?.nome || user?.name || '?')[0]?.toUpperCase()}
+              </div>
+            )}
+            <div className="hidden sm:flex flex-col items-start leading-tight">
+              <span className="text-sm font-medium text-white truncate max-w-[120px]">
+                {user?.nome || user?.name || 'Usuário'}
+              </span>
+              <span className="text-[11px] text-neutral">{planDisplay}</span>
+            </div>
+            <ChevronDown className={clsx(
+              "w-3.5 h-3.5 text-neutral transition-transform duration-200 hidden sm:block",
+              showUserMenu && "rotate-180"
+            )} />
+          </button>
+
+          {showUserMenu && (
+            <div className="absolute right-0 top-full mt-2 w-52 bg-premium-dark border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-fade-in z-50">
+              <div className="px-4 py-3 border-b border-white/5">
+                <p className="text-sm font-medium text-white truncate">{user?.nome || user?.name}</p>
+                <p className="text-xs text-neutral truncate">{user?.email || user?.telefone || user?.phone}</p>
+              </div>
+              <div className="py-1">
+                <button
+                  onClick={() => { setShowUserMenu(false); navigate('/perfil'); }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral hover:text-white hover:bg-white/5 transition-all"
+                >
+                  <User className="w-4 h-4" />
+                  Ver perfil
+                </button>
+                <button
+                  onClick={() => { setShowUserMenu(false); logout(); navigate('/login'); }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-negative/80 hover:text-negative hover:bg-negative/5 transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sair
+                </button>
+              </div>
             </div>
           )}
-        </Link>
+        </div>
       </div>
     </header>
   );

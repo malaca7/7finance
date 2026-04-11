@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Wrench, AlertTriangle, CheckCircle, Clock, Edit2, Trash2, Car } from 'lucide-react';
+import { Plus, Wrench, AlertTriangle, CheckCircle, Clock, Edit2, Trash2, Car, Gauge } from 'lucide-react';
 import { Card, CardHeader, Button, Input, Select, Modal, ConfirmModal } from '../components/ui';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAppStore } from '../store';
@@ -45,10 +45,32 @@ export function MaintenancePage() {
     ? (Number(kmRegistries[0].km_final) || Number(kmRegistries[0].km_inicial) || 0)
     : 0;
 
+  const getVeiculoKm = (veiculoId: string | number) => {
+    const reg = kmRegistries.find(k => k.veiculo_id?.toString() === veiculoId.toString());
+    return reg ? (Number(reg.km_final) || Number(reg.km_inicial) || 0) : 0;
+  };
+
+  const displayKm = filterVeiculoId !== 'all' ? getVeiculoKm(filterVeiculoId) : currentKm;
+  const displayVeiculo = filterVeiculoId !== 'all' 
+    ? veiculos.find(v => v.id.toString() === filterVeiculoId) 
+    : null;
+
   useEffect(() => {
     loadMaintenances();
     loadVeiculos();
+    loadKm();
   }, []);
+
+  const loadKm = async () => {
+    try {
+      const response = await kmApi.getAll();
+      if (response.success && response.data) {
+        useAppStore.getState().setKmRegistries(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading km:', error);
+    }
+  };
 
   const loadVeiculos = async () => {
     try {
@@ -272,6 +294,46 @@ export function MaintenancePage() {
           </Card>
         )}
 
+        {veiculos.length > 0 && (
+          <div className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-2xl p-5">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="flex items-center justify-between relative">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center">
+                  <Gauge className="w-7 h-7 text-primary" />
+                </div>
+                <div>
+                  <p className="text-neutral text-sm">KM Atual {displayVeiculo ? `• ${displayVeiculo.modelo}${displayVeiculo.placa ? ` (${displayVeiculo.placa})` : ''}` : '• Geral'}</p>
+                  <p className="text-3xl font-bold text-white tracking-tight">
+                    {displayKm > 0 ? formatNumber(displayKm) : '—'}
+                    <span className="text-base font-normal text-neutral ml-1.5">km</span>
+                  </p>
+                </div>
+              </div>
+              {displayKm > 0 && filteredMaintenances.some(m => m.proxima_manutencao_km && m.status !== 'concluido') && (
+                <div className="text-right hidden sm:block">
+                  <p className="text-neutral text-xs">Próxima manutenção</p>
+                  {(() => {
+                    const prox = filteredMaintenances
+                      .filter(m => m.proxima_manutencao_km && m.status !== 'concluido')
+                      .sort((a, b) => (a.proxima_manutencao_km || 0) - (b.proxima_manutencao_km || 0))[0];
+                    if (!prox?.proxima_manutencao_km) return null;
+                    const diff = prox.proxima_manutencao_km - displayKm;
+                    return (
+                      <>
+                        <p className="text-lg font-bold text-white">{formatNumber(prox.proxima_manutencao_km)} km</p>
+                        <p className={`text-xs font-medium ${diff <= 0 ? 'text-negative' : diff <= 500 ? 'text-amber-400' : 'text-primary'}`}>
+                          {diff <= 0 ? `Excedido em ${formatNumber(Math.abs(diff))} km` : `Faltam ${formatNumber(diff)} km`}
+                        </p>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card variant="highlight">
             <div className="flex items-center gap-3">
@@ -371,23 +433,44 @@ export function MaintenancePage() {
               {filteredMaintenances.map((maintenance) => (
                 <div 
                   key={maintenance.id} 
-                  className="flex items-center justify-between p-4 bg-premium-darkGray/50 rounded-full hover:bg-primary/10 hover:shadow-glow-green-sm transition-all duration-300 group"
+                  className="flex items-center justify-between p-4 bg-premium-darkGray/50 rounded-2xl hover:bg-primary/10 hover:shadow-glow-green-sm transition-all duration-300 group"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
                       <Wrench className="w-5 h-5 text-primary" />
                     </div>
-                    <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
-                      <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">
-                        {maintenance.descricao || 'Manutenção'}
-                      </span>
-                      {maintenance.valor && (
-                        <span className="text-neutral text-sm">{formatCurrency(maintenance.valor)}</span>
-                      )}
-                      <span className="text-neutral text-sm">{displayLocaleDatetime(maintenance.data)}</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">
+                          {maintenance.descricao || 'Manutenção'}
+                        </span>
+                        {getVeiculoLabel(maintenance) && (
+                          <span className="px-2 py-0.5 bg-blue-500/15 text-blue-400 rounded-full text-xs flex items-center gap-1">
+                            <Car className="w-3 h-3" />
+                            {getVeiculoLabel(maintenance)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {maintenance.proxima_manutencao_km && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/15 border border-amber-500/25 text-amber-400 rounded-full text-xs font-semibold">
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z"/><path d="M12 6v6l4 2"/></svg>
+                            Próx: {formatNumber(maintenance.proxima_manutencao_km)} km
+                          </span>
+                        )}
+                        {maintenance.km_registro && (
+                          <span className="text-neutral/80 text-xs">
+                            Feito em {formatNumber(maintenance.km_registro)} km
+                          </span>
+                        )}
+                        {maintenance.valor ? (
+                          <span className="text-white font-semibold text-sm">{formatCurrency(maintenance.valor)}</span>
+                        ) : null}
+                        <span className="text-neutral text-xs">{displayLocaleDatetime(maintenance.data)}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 shrink-0">
                     <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(maintenance.status)}`}>
                       {getStatusIcon(maintenance.status)}
                       {maintenance.status.charAt(0).toUpperCase() + maintenance.status.slice(1)}
