@@ -16,6 +16,8 @@ export interface User {
   email?: string | null;
   role: string;
   avatar_url?: string | null;
+  bio?: string | null;
+  username?: string | null;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -330,4 +332,27 @@ export interface SystemAlert {
   mensagem: string;
   acao?: string;
   created_at?: string;
+}
+
+// ============== SISTEMA DE FOLLOWS ==============
+export interface Follow {
+  id: string;
+  follower_id: string;
+  following_id: string;
+  criada_em: string;
+}
+
+export interface FollowWithUser extends Follow {
+  // Dados do usuário (follower ou following, dependendo do contexto)
+  user: Pick<User, 'id' | 'name' | 'avatar_url' | 'role'> & { nome?: string; foto_url?: string };
+}
+
+export interface FollowCounts {
+  followers_count: number;
+  following_count: number;
+}
+
+export interface UserProfile extends User {
+  followCounts: FollowCounts;
+  isFollowing: boolean;
 }

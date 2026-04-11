@@ -21,6 +21,8 @@ import { ProfilePage } from './pages/Profile';
 import { NotificationsHistoryPage } from './pages/NotificationsHistory';
 import { ChatPage } from './pages/Chat';
 import { PlansPage } from './pages/Plans';
+import { UserProfilePage } from './pages/UserProfile';
+import { FollowListPage } from './pages/FollowList';
 
 // Admin Pages
 import { AdminOverviewPage } from './pages/AdminOverview';
@@ -231,6 +233,24 @@ function App() {
               <PlanRoute path="/chat">
                 <ChatPage />
               </PlanRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/user/:userId"
+          element={
+            <ProtectedRoute>
+              <UserProfilePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/user/:userId/follows"
+          element={
+            <ProtectedRoute>
+              <FollowListPage />
             </ProtectedRoute>
           }
         />
