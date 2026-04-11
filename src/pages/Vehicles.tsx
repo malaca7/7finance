@@ -420,10 +420,10 @@ export function VehiclesPage() {
       {/* FAB mobile - botão flutuante acima da bottom nav */}
       <button
         onClick={openNewModal}
-        className="sm:hidden fixed right-4 bottom-24 z-50 w-14 h-14 rounded-full bg-primary text-premium-black shadow-lg shadow-primary/30 flex items-center justify-center active:scale-95 transition-transform"
+        className="sm:hidden fixed right-6 bottom-32 z-[110] w-14 h-14 rounded-full bg-primary text-premium-black shadow-lg shadow-primary/40 flex items-center justify-center active:scale-95 transition-transform border-4 border-premium-black"
         aria-label="Adicionar Veículo"
       >
-        <Plus className="w-6 h-6" strokeWidth={3} />
+        <Plus className="w-8 h-8" strokeWidth={3} />
       </button>
     </MainLayout>
   );
