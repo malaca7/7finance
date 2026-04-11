@@ -80,8 +80,10 @@ export function Sidebar() {
                 key={item.path}
                 to={item.path}
                 className={clsx(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-premium-lightGray/40",
-                  isActive ? "text-premium-limao bg-premium-lightGray/60" : "text-premium-limao hover:text-premium-limao/80"
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors font-bold",
+                  isActive
+                    ? "bg-primary text-white shadow-[0_0_16px_0_rgba(57,255,20,0.15)]"
+                    : "text-primary hover:bg-primary/10 hover:text-primary"
                 )}
               >
                 <Icon className="w-6 h-6" />
@@ -97,8 +99,10 @@ export function Sidebar() {
                 key={item.path}
                 to={item.path}
                 className={clsx(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-premium-lightGray/40",
-                  isActive ? "text-premium-limao bg-premium-lightGray/60" : "text-premium-limao hover:text-premium-limao/80"
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors font-bold",
+                  isActive
+                    ? "bg-primary text-white shadow-[0_0_16px_0_rgba(57,255,20,0.15)]"
+                    : "text-primary hover:bg-primary/10 hover:text-primary"
                 )}
               >
                 <Icon className="w-6 h-6" />
@@ -110,7 +114,7 @@ export function Sidebar() {
         <div className="p-2 mt-auto">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-premium-limao hover:text-premium-black hover:bg-premium-limao/80 transition-all"
+            className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-primary hover:text-white hover:bg-primary/80 font-bold transition-all"
           >
             <LogOut className="w-6 h-6" />
             {!isCollapsed && <span className="text-sm font-bold leading-none">Sair</span>}
