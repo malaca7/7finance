@@ -59,85 +59,65 @@ function adaptUser(raw: any): User {
 }
 
 export const authApi = {
+  /**
+   * Login com telefone + senha.
+   * O Supabase Auth usa {phone}@7finance.com como email interno.
+   */
   async login(telefone: string, senha: string): Promise<ApiResponse<{ user: User; token: string }>> {
     try {
       const cleanPhone = telefone.replace(/\D/g, '');
-      
-      // Usa admin client para buscar email (bypass RLS — usuário não autenticado ainda)
-      const { createAdminClient } = await import('./supabase');
-      const adminClient = await createAdminClient();
-      
-      // 1) Busca o email real do usuário na tabela users pelo telefone
-      const { data: userRow } = await adminClient
-        .from('users')
-        .select('email, auth_id')
-        .eq('phone', cleanPhone)
-        .single();
+      const authEmail = `${cleanPhone}@7finance.com`;
 
-      // Lista de emails para tentar autenticar (em ordem de prioridade)
-      const emailsToTry: string[] = [];
-      if (userRow?.email) emailsToTry.push(userRow.email);
-      emailsToTry.push(`${cleanPhone}@7finance.com`);
-      // Remove duplicatas
-      const uniqueEmails = [...new Set(emailsToTry)];
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password: senha,
+      });
 
-      let lastError: any = null;
-      for (const emailAttempt of uniqueEmails) {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: emailAttempt,
-          password: senha,
-        });
-
-        if (!authError && authData.user && authData.session) {
-          // Login bem-sucedido — buscar perfil
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('auth_id', authData.user.id)
-            .single();
-
-          if (userError || !userData) {
-            // Cria perfil se não existir
-            const { data: newUser, error: createError } = await supabase
-              .from('users')
-              .insert({
-                auth_id: authData.user.id,
-                phone: cleanPhone,
-                name: authData.user.email?.split('@')[0] || 'Usuário',
-              })
-              .select()
-              .single();
-
-            if (createError) {
-              return { success: false, error: 'Erro ao criar perfil: ' + createError.message };
-            }
-
-            return {
-              success: true,
-              data: {
-                user: adaptUser(newUser),
-                token: authData.session.access_token,
-              },
-            };
-          }
-
-          return {
-            success: true,
-            data: {
-              user: adaptUser(userData),
-              token: authData.session.access_token,
-            },
-          };
-        }
-
-        lastError = authError;
+      if (authError) {
+        return {
+          success: false,
+          error: authError.message.includes('Invalid')
+            ? 'Telefone ou senha incorretos'
+            : authError.message,
+        };
       }
 
-      // Nenhuma tentativa funcionou
-      const msg = lastError?.message || '';
+      if (!authData.user || !authData.session) {
+        return { success: false, error: 'Erro na autenticação' };
+      }
+
+      // Busca perfil na tabela users
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_id', authData.user.id)
+        .single();
+
+      if (userError || !userData) {
+        // Cria perfil se não existir
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({
+            auth_id: authData.user.id,
+            phone: cleanPhone,
+            name: 'Usuário',
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          return { success: false, error: 'Erro ao criar perfil: ' + createError.message };
+        }
+
+        return {
+          success: true,
+          data: { user: adaptUser(newUser), token: authData.session.access_token },
+        };
+      }
+
       return {
-        success: false,
-        error: msg.includes('Invalid') ? 'Telefone ou senha incorretos' : (msg || 'Erro no login'),
+        success: true,
+        data: { user: adaptUser(userData), token: authData.session.access_token },
       };
     } catch (err: any) {
       console.error('Login exception:', err);
@@ -145,11 +125,18 @@ export const authApi = {
     }
   },
 
+  /**
+   * Registro: Supabase Auth usa {phone}@7finance.com. Email real fica na tabela users.
+   */
   async register(userData: any): Promise<ApiResponse<{ user: User; token: string }>> {
     try {
-      const email = userData.email;
+      const cleanPhone = (userData.telefone || '').replace(/\D/g, '');
+      if (!cleanPhone) return { success: false, error: 'Telefone é obrigatório' };
+
+      const authEmail = `${cleanPhone}@7finance.com`;
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
+        email: authEmail,
         password: userData.password,
         options: {
           data: { name: userData.nome },
@@ -160,28 +147,27 @@ export const authApi = {
         if (authError.message.toLowerCase().includes('rate limit')) {
           return { success: false, error: 'Muitas tentativas de cadastro. Aguarde alguns minutos e tente novamente.' };
         }
+        if (authError.message.toLowerCase().includes('already registered')) {
+          return { success: false, error: 'Este telefone já está cadastrado.' };
+        }
         return { success: false, error: authError.message };
       }
 
-      // Se o Supabase retornou user sem session, pode ser que o email já exista
-      // ou que a confirmação ainda esteja ativa
+      // Se retornou user sem session, tentar login direto
       if (authData.user && !authData.session) {
-        // Tenta fazer login direto caso o confirm email esteja desativado
         const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-          email,
+          email: authEmail,
           password: userData.password,
         });
         if (!loginError && loginData.session) {
-          // Login funcionou, o user já existia — seguir com o fluxo
           authData.session = loginData.session;
         }
       }
 
-      // Colunas REAIS do banco: name, phone, email, auth_id, role
       const newUser = {
         name: userData.nome,
-        phone: userData.telefone?.replace(/\D/g, ''),
-        email: userData.email,
+        phone: cleanPhone,
+        email: userData.email || '',
         auth_id: authData.user?.id,
         role: 'user',
       };

@@ -413,22 +413,19 @@ export function ProfilePage() {
                   try {
                     const { supabase } = await import('../api/supabase');
                     
-                    // Descobrir o email usado no auth (phone@7finance.com ou email real)
+                    // Auth usa {phone}@7finance.com
                     const phone = user.telefone || user.phone || '';
                     const cleanPhone = phone.replace(/\D/g, '');
-                    const phoneEmail = cleanPhone ? `${cleanPhone}@7finance.com` : '';
-                    const realEmail = user.email || '';
+                    const authEmail = cleanPhone ? `${cleanPhone}@7finance.com` : '';
                     
-                    // Tentar reautenticar com senha atual para validar
-                    let reauthed = false;
-                    if (phoneEmail) {
-                      const { error: e1 } = await supabase.auth.signInWithPassword({ email: phoneEmail, password: senhaAtual });
-                      if (!e1) reauthed = true;
+                    if (!authEmail) {
+                      toast.error('Telefone não encontrado no perfil');
+                      setSenhaLoading(false);
+                      return;
                     }
-                    if (!reauthed && realEmail) {
-                      const { error: e2 } = await supabase.auth.signInWithPassword({ email: realEmail, password: senhaAtual });
-                      if (!e2) reauthed = true;
-                    }
+                    
+                    const { error: reAuthErr } = await supabase.auth.signInWithPassword({ email: authEmail, password: senhaAtual });
+                    const reauthed = !reAuthErr;
                     
                     if (!reauthed) {
                       toast.error('Senha atual incorreta');
