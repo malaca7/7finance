@@ -469,10 +469,7 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                               <Eye className="w-3.5 h-3.5" />
                             </button>
                           )}
-                        </div>{
-                              setUserIdToReset(user.id);
-                              setIsResetModalOpen(true);
-                            }
+                        </div>
                       </td>
                       <td className="p-4">
                         <p className="text-xs text-gray-500">{user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '-'}</p>
@@ -480,7 +477,10 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                       <td className="p-4 text-right">
                         <div className="flex justify-end gap-2">
                           <Button 
-                            onClick={() => handleResetPassword(user.id)}
+                            onClick={() => {
+                              setUserIdToReset(user.id);
+                              setIsResetModalOpen(true);
+                            }}
                             variant="secondary"
                             size="sm"
                             className="p-2 rounded-lg transition-all"
