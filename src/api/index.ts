@@ -513,17 +513,24 @@ export const adminApi = {
 };
 
 export const logsApi = {
-  async getAll(filters?: { userId?: string; action?: string; startDate?: string; endDate?: string }) {
+  async getAll(filters?: { userId?: string; action?: string; startDate?: string; endDate?: string; role?: string }) {
     try {
       let query = supabase
         .from('audit_logs')
-        .select('*, users!audit_logs_user_id_fkey(name, email)')
+        .select('*, users:users!audit_logs_user_id_fkey(name, email, role)')
         .order('created_at', { ascending: false })
         .limit(500);
 
-      if (filters?.userId) {
+      if (filters?.userId && filters.userId !== 'admin' && filters.userId !== 'user') {
         query = query.eq('user_id', filters.userId);
       }
+      
+      if (filters?.role === 'admin') {
+        query = query.eq('users.role', 'admin');
+      } else if (filters?.role === 'user') {
+        query = query.neq('users.role', 'admin');
+      }
+      
       if (filters?.action && filters.action !== 'all') {
         query = query.eq('action', filters.action);
       }

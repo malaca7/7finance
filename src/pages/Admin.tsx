@@ -86,7 +86,8 @@ export function AdminPage() {
           userId: logFilterUser !== 'all' ? logFilterUser : undefined,
           action: logFilterAction !== 'all' ? logFilterAction : undefined,
           startDate: logDateStart || undefined,
-          endDate: logDateEnd ? `${logDateEnd}T23:59:59` : undefined
+          endDate: logDateEnd ? `${logDateEnd}T23:59:59` : undefined,
+          role: logFilterUser === 'admin' || logFilterUser === 'user' ? logFilterUser : undefined
         })
       ]);
 
@@ -667,7 +668,7 @@ export function AdminPage() {
                   />
                 </div>
                 
-                {/* Filter by User */}
+                {/* Filter by User Role */}
                 <select
                   value={logFilterUser}
                   onChange={(e) => {
@@ -677,11 +678,8 @@ export function AdminPage() {
                   className="bg-premium-darkGray border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:border-primary focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="all">Todos os Usuários</option>
-                  {allUsers.map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.nome || user.name || user.email || user.id}
-                    </option>
-                  ))}
+                  <option value="admin">Apenas Administradores</option>
+                  <option value="user">Apenas Usuários</option>
                 </select>
                 
                 {/* Filter by Action */}
