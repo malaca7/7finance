@@ -249,9 +249,7 @@ function App() {
         <Route
           path="/perfil/:username"
           element={
-            <ProtectedRoute>
-              <UserProfilePage />
-            </ProtectedRoute>
+            <UserProfilePage />
           }
         />
 

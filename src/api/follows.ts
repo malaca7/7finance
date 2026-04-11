@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, createAdminClient } from './supabase';
 import type { ApiResponse, Follow, FollowCounts, FollowWithUser, User } from '../types';
 
 // Cache do users.id
@@ -184,7 +184,9 @@ export const followsApi = {
   },
 
   async getUserProfileByUsername(userlink: string): Promise<ApiResponse<{ user: User; counts: FollowCounts; isFollowing: boolean }>> {
-    const { data: userData, error } = await supabase
+    // Use admin client to bypass RLS (public profiles)
+    const admin = await createAdminClient();
+    const { data: userData, error } = await admin
       .from('users')
       .select('*')
       .eq('userlink', userlink)

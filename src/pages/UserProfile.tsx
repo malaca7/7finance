@@ -34,6 +34,7 @@ export function UserProfilePage() {
   const { userId, username: routeUsername } = useParams<{ userId?: string; username?: string }>();
   const navigate = useNavigate();
   const { user: me } = useAppStore();
+  const isLoggedIn = !!me;
   const { planName } = usePlanAccess();
   const { checkIsFollowing, followingMap, followers, fetchFollowers } = useFollowStore();
   const [profileUser, setProfileUser] = useState<User | null>(null);
@@ -70,8 +71,8 @@ export function UserProfilePage() {
       setProfileCounts(res.data.counts);
       const uid = res.data.user.id;
       setResolvedUserId(uid);
-      if (uid !== me?.id) await checkIsFollowing(uid);
-      await fetchFollowers(uid);
+      if (isLoggedIn && uid !== me?.id) await checkIsFollowing(uid);
+      if (isLoggedIn) await fetchFollowers(uid);
     }
     setLoading(false);
   };
@@ -95,19 +96,26 @@ export function UserProfilePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Layout wrapper: MainLayout with sidebar if logged in, simple container if not
+  const Wrapper = isLoggedIn ? MainLayout : ({ children }: { children: React.ReactNode }) => (
+    <div className="min-h-screen bg-premium-black">
+      <div className="max-w-2xl mx-auto p-4 lg:p-8">{children}</div>
+    </div>
+  );
+
   if (loading) {
     return (
-      <MainLayout>
+      <Wrapper>
         <div className="flex items-center justify-center py-24">
           <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
-      </MainLayout>
+      </Wrapper>
     );
   }
 
   if (!profileUser) {
     return (
-      <MainLayout>
+      <Wrapper>
         <div className="text-center py-24 space-y-4">
           <div className="w-20 h-20 mx-auto rounded-full bg-premium-darkGray/50 flex items-center justify-center">
             <UserIcon className="w-10 h-10 text-neutral/30" />
@@ -123,7 +131,7 @@ export function UserProfilePage() {
             Voltar
           </button>
         </div>
-      </MainLayout>
+      </Wrapper>
     );
   }
 
@@ -138,7 +146,7 @@ export function UserProfilePage() {
   const isFollowing = followingMap[resolvedUserId!] ?? false;
 
   return (
-    <MainLayout>
+    <Wrapper>
       <div className="max-w-2xl mx-auto space-y-5 pb-24 lg:pb-8">
         {/* Top Bar */}
         <div className="flex items-center justify-between">
@@ -225,7 +233,7 @@ export function UserProfilePage() {
                   >
                     Editar perfil
                   </Link>
-                ) : (
+                ) : isLoggedIn ? (
                   <>
                     <button
                       onClick={() => navigate('/chat')}
@@ -236,6 +244,13 @@ export function UserProfilePage() {
                     </button>
                     <FollowButton targetUserId={resolvedUserId!} />
                   </>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="px-4 py-2 text-sm font-semibold text-white bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded-full transition-all"
+                  >
+                    Entrar
+                  </Link>
                 )}
               </div>
             </div>
@@ -275,24 +290,39 @@ export function UserProfilePage() {
 
               {/* Follow Counts - inline style */}
               <div className="flex items-center gap-4 pt-1">
-                <button
-                  onClick={() => navigate(`/user/${resolvedUserId}/follows?tab=following`)}
-                  className="group text-sm"
-                >
-                  <span className="font-bold text-white group-hover:text-primary transition-colors">
-                    {profileCounts.following_count}
-                  </span>{' '}
-                  <span className="text-neutral group-hover:text-neutral/80">seguindo</span>
-                </button>
-                <button
-                  onClick={() => navigate(`/user/${resolvedUserId}/follows?tab=followers`)}
-                  className="group text-sm"
-                >
-                  <span className="font-bold text-white group-hover:text-primary transition-colors">
-                    {profileCounts.followers_count}
-                  </span>{' '}
-                  <span className="text-neutral group-hover:text-neutral/80">seguidores</span>
-                </button>
+                {isLoggedIn ? (
+                  <>
+                    <button
+                      onClick={() => navigate(`/user/${resolvedUserId}/follows?tab=following`)}
+                      className="group text-sm"
+                    >
+                      <span className="font-bold text-white group-hover:text-primary transition-colors">
+                        {profileCounts.following_count}
+                      </span>{' '}
+                      <span className="text-neutral group-hover:text-neutral/80">seguindo</span>
+                    </button>
+                    <button
+                      onClick={() => navigate(`/user/${resolvedUserId}/follows?tab=followers`)}
+                      className="group text-sm"
+                    >
+                      <span className="font-bold text-white group-hover:text-primary transition-colors">
+                        {profileCounts.followers_count}
+                      </span>{' '}
+                      <span className="text-neutral group-hover:text-neutral/80">seguidores</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm">
+                      <span className="font-bold text-white">{profileCounts.following_count}</span>{' '}
+                      <span className="text-neutral">seguindo</span>
+                    </span>
+                    <span className="text-sm">
+                      <span className="font-bold text-white">{profileCounts.followers_count}</span>{' '}
+                      <span className="text-neutral">seguidores</span>
+                    </span>
+                  </>
+                )}
               </div>
 
               {/* Mutual Followers */}
@@ -389,8 +419,8 @@ export function UserProfilePage() {
               </div>
             </Card>
 
-            {/* Suggestions (only for other profiles) */}
-            {!isMe && <FollowSuggestions />}
+            {/* Suggestions (only for logged-in users viewing other profiles) */}
+            {isLoggedIn && !isMe && <FollowSuggestions />}
           </div>
         )}
 
@@ -408,6 +438,6 @@ export function UserProfilePage() {
           </Card>
         )}
       </div>
-    </MainLayout>
+    </Wrapper>
   );
 }
