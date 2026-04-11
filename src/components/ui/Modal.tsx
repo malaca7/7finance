@@ -31,7 +31,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black/70" />
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
         </Transition.Child>
         
         <div className="fixed inset-0 overflow-y-auto">
@@ -47,8 +47,8 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
             >
               <Dialog.Panel
                 className={clsx(
-                  'w-full transform rounded-premium-lg bg-premium-darkGray p-6 shadow-premium-lg transition-all',
-                  'border border-premium-gray/30',
+                  'w-full transform rounded-3xl bg-premium-dark p-6 shadow-card transition-all',
+                  'border border-white/10',
                   sizeClasses[size]
                 )}
               >
@@ -59,7 +59,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
                     </Dialog.Title>
                     <button
                       onClick={onClose}
-                      className="p-1 text-gray-400 hover:text-white transition-colors"
+                      className="p-2 text-neutral hover:text-white hover:bg-premium-darkGray rounded-full transition-all duration-200"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -96,11 +96,11 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
-      <p className="text-gray-300 mb-6">{message}</p>
+      <p className="text-neutral mb-6">{message}</p>
       <div className="flex gap-3 justify-end">
         <button
           onClick={onClose}
-          className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+          className="px-4 py-2 text-neutral hover:text-white transition-colors rounded-2xl hover:bg-premium-darkGray"
         >
           Cancelar
         </button>
@@ -110,10 +110,10 @@ export function ConfirmModal({
             onClose();
           }}
           className={clsx(
-            'px-4 py-2 rounded-premium font-medium transition-colors',
+            'px-4 py-2 rounded-2xl font-medium transition-all duration-200',
             variant === 'danger'
-              ? 'bg-red-600 hover:bg-red-700 text-white'
-              : 'bg-gradient-to-r from-primary via-accent to-primary text-premium-black shadow-[0_0_16px_0_rgba(57,255,20,0.25)] hover:from-accent hover:to-primary'
+              ? 'bg-negative hover:bg-red-600 text-white hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]'
+              : 'bg-gradient-to-r from-primary to-secondary text-white hover:shadow-glow-green hover:scale-[1.02]'
           )}
         >
           {confirmText}

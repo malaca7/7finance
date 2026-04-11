@@ -31,11 +31,9 @@ export function MaintenancePage() {
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  // Veículos
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [filterVeiculoId, setFilterVeiculoId] = useState<string>('all');
 
-  // Form state
   const [tipo, setTipo] = useState<MaintenanceType>('oleo');
   const [veiculoId, setVeiculoId] = useState<string>('');
   const [proximaManutencaoKm, setProximaManutencaoKm] = useState('');
@@ -43,7 +41,6 @@ export function MaintenancePage() {
   const [valor, setValor] = useState('');
   const [obs, setObs] = useState('');
 
-  // Get current KM (km_final, or km_inicial if final not yet filled)
   const currentKm = kmRegistries.length > 0 
     ? (Number(kmRegistries[0].km_final) || Number(kmRegistries[0].km_inicial) || 0)
     : 0;
@@ -77,10 +74,10 @@ export function MaintenancePage() {
       setIsLoading(false);
     }
   };
+
   const openModal = (maintenance?: Maintenance) => {
     if (maintenance) {
       setSelectedMaintenance(maintenance);
-      // Tenta inferir o tipo a partir da descrição
       const inferredType = maintenanceTypeOptions.find(o => maintenance.descricao?.toLowerCase().includes(o.label.toLowerCase()));
       setTipo((inferredType?.value as MaintenanceType) || 'oleo');
       setVeiculoId(maintenance.veiculo_id?.toString() || (veiculos.length > 0 ? veiculos[0].id.toString() : ''));
@@ -119,7 +116,6 @@ export function MaintenancePage() {
       if (selectedMaintenance) {
         response = await maintenanceApi.update(selectedMaintenance.id, maintenanceData);
         if (response.success) {
-          // Since backend only returns true on update currently, manual update in store
           updateMaintenance(selectedMaintenance.id, { ...selectedMaintenance, ...maintenanceData } as any);
         }
       } else {
@@ -183,9 +179,8 @@ export function MaintenancePage() {
     return new Intl.NumberFormat('pt-BR').format(value);
   };
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('pt-BR');
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
 
   const getTypeLabel = (type: MaintenanceType) => {
@@ -197,9 +192,9 @@ export function MaintenancePage() {
     switch (status) {
       case 'pendente': return 'bg-yellow-500/20 text-yellow-400';
       case 'urgente': return 'bg-orange-500/20 text-orange-400';
-      case 'atrasado': return 'bg-red-500/20 text-red-400';
-      case 'concluido': return 'bg-green-500/20 text-green-400';
-      default: return 'bg-gray-500/20 text-gray-400';
+      case 'atrasado': return 'bg-negative/20 text-negative';
+      case 'concluido': return 'bg-primary/20 text-primary';
+      default: return 'bg-neutral/20 text-neutral';
     }
   };
 
@@ -218,12 +213,10 @@ export function MaintenancePage() {
     return null;
   };
 
-  // Filter maintenances by selected vehicle
   const filteredMaintenances = filterVeiculoId === 'all' 
     ? maintenances 
     : maintenances.filter(m => m.veiculo_id?.toString() === filterVeiculoId);
 
-  // Calculate alerts
   const alerts = filteredMaintenances.filter(m => {
     if (m.status === 'concluido') return false;
     if (m.proxima_manutencao_km && (currentKm ?? 0) >= m.proxima_manutencao_km) return true;
@@ -239,11 +232,10 @@ export function MaintenancePage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Manutenção</h1>
-            <p className="text-gray-400 mt-1">Controle de manutenção por veículo</p>
+            <p className="text-neutral mt-1">Controle de manutenção por veículo</p>
           </div>
           
           <div className="flex items-center gap-3">
@@ -251,7 +243,7 @@ export function MaintenancePage() {
               <select
                 value={filterVeiculoId}
                 onChange={(e) => setFilterVeiculoId(e.target.value)}
-                className="bg-premium-dark border border-premium-gray/50 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-premium-gold transition-all"
+                className="bg-premium-darkGray border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               >
                 <option value="all">Todos os Carros</option>
                 {veiculos.map(v => (
@@ -268,28 +260,26 @@ export function MaintenancePage() {
           </div>
         </div>
 
-        {/* No vehicles warning */}
         {veiculos.length === 0 && (
           <Card variant="warning">
             <div className="flex items-center gap-3 p-2">
               <Car className="w-8 h-8 text-orange-400 shrink-0" />
               <div>
                 <p className="text-white font-bold">Nenhum veículo cadastrado</p>
-                <p className="text-gray-400 text-sm">Cadastre um veículo na página de KM antes de registrar manutenções.</p>
+                <p className="text-neutral text-sm">Cadastre um veículo na página de KM antes de registrar manutenções.</p>
               </div>
             </div>
           </Card>
         )}
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card variant="highlight">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-premium-gold/20 rounded-premium">
-                <Wrench className="w-6 h-6 text-premium-gold" />
+              <div className="p-3 bg-primary/20 rounded-2xl">
+                <Wrench className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Pendentes</p>
+                <p className="text-sm text-neutral">Pendentes</p>
                 <p className="text-xl font-bold text-white">{pending}</p>
               </div>
             </div>
@@ -297,11 +287,11 @@ export function MaintenancePage() {
 
           <Card variant="warning">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-orange-500/20 rounded-premium">
+              <div className="p-3 bg-orange-500/20 rounded-2xl">
                 <AlertTriangle className="w-6 h-6 text-orange-500" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Urgentes</p>
+                <p className="text-sm text-neutral">Urgentes</p>
                 <p className="text-xl font-bold text-white">{urgent}</p>
               </div>
             </div>
@@ -309,11 +299,11 @@ export function MaintenancePage() {
 
           <Card variant="warning">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-red-500/20 rounded-premium">
-                <AlertTriangle className="w-6 h-6 text-red-500" />
+              <div className="p-3 bg-negative/20 rounded-2xl">
+                <AlertTriangle className="w-6 h-6 text-negative" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Atrasados</p>
+                <p className="text-sm text-neutral">Atrasados</p>
                 <p className="text-xl font-bold text-white">{overdue}</p>
               </div>
             </div>
@@ -321,18 +311,17 @@ export function MaintenancePage() {
 
           <Card>
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-green-500/20 rounded-premium">
-                <CheckCircle className="w-6 h-6 text-green-500" />
+              <div className="p-3 bg-primary/20 rounded-2xl">
+                <CheckCircle className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Concluídos</p>
+                <p className="text-sm text-neutral">Concluídos</p>
                 <p className="text-xl font-bold text-white">{completed}</p>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Alerts */}
         {alerts.length > 0 && (
           <Card variant="warning">
             <CardHeader 
@@ -343,13 +332,13 @@ export function MaintenancePage() {
               {alerts.map(alert => (
                 <div 
                   key={alert.id}
-                  className="flex items-center justify-between p-3 bg-red-500/10 border border-red-500/30 rounded-premium"
+                  className="flex items-center justify-between p-4 bg-negative/10 border border-negative/30 rounded-full"
                 >
                   <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 text-red-500" />
+                    <AlertTriangle className="w-5 h-5 text-negative" />
                     <div>
                       <p className="font-medium text-white">{alert.descricao || 'Manutenção'}</p>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-neutral">
                         {alert.proxima_manutencao_km && (currentKm ?? 0) >= alert.proxima_manutencao_km 
                           ? `KM atual (${formatNumber(currentKm ?? 0)}) excedeu limite (${formatNumber(alert.proxima_manutencao_km)})`
                           : alert.data && new Date(alert.data) <= new Date()
@@ -360,7 +349,7 @@ export function MaintenancePage() {
                     </div>
                   </div>
                   <Button size="sm" onClick={() => handleMarkComplete(alert.id)}>
-                    Marcar Concluído
+                    Concluir
                   </Button>
                 </div>
               ))}
@@ -368,149 +357,75 @@ export function MaintenancePage() {
           </Card>
         )}
 
-        {/* List */}
         <Card>
           <CardHeader title="Histórico de Manutenção" subtitle={`${filteredMaintenances.length} registros${filterVeiculoId !== 'all' ? ` • ${veiculos.find(v => v.id.toString() === filterVeiculoId)?.modelo || ''}` : ''}`} />
           
           {filteredMaintenances.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-neutral">
               <Wrench className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>Nenhuma manutenção cadastrada ainda</p>
               <p className="text-sm mt-1">Clique em "Nova Manutenção" para começar</p>
             </div>
           ) : (
-            <>
-              {/* Desktop Table */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-premium-gray/30">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Veículo</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Descrição</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Próx. KM</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Data</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredMaintenances.map((maintenance) => (
-                      <tr key={maintenance.id} className="border-b border-premium-gray/20 hover:bg-premium-gray/20">
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center gap-1 text-sm text-blue-400">
-                            <Car className="w-3.5 h-3.5" />
-                            {getVeiculoLabel(maintenance) || '-'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-1 bg-premium-gold/20 text-premium-gold rounded text-sm">
-                            {maintenance.descricao || 'Manutenção'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-white">
-                          {maintenance.proxima_manutencao_km ? `${formatNumber(maintenance.proxima_manutencao_km)} km` : '-'}
-                        </td>
-                        <td className="py-3 px-4 text-gray-400">
-                          {displayLocaleDatetime(maintenance.data)}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-sm ${getStatusColor(maintenance.status)}`}>
-                            {getStatusIcon(maintenance.status)}
-                            {maintenance.status.charAt(0).toUpperCase() + maintenance.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex justify-end gap-2">
-                            {maintenance.status !== 'concluido' && (
-                              <button
-                                onClick={() => handleMarkComplete(maintenance.id)}
-                                className="p-2 text-gray-400 hover:text-green-500 hover:bg-green-500/10 rounded-premium transition-colors"
-                                title="Marcar como concluído"
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => openModal(maintenance)}
-                              className="p-2 text-gray-400 hover:text-white hover:bg-premium-gray rounded-premium transition-colors"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setDeleteId(maintenance.id);
-                                setIsDeleteModalOpen(true);
-                              }}
-                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-premium transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Cards */}
-              <div className="md:hidden divide-y divide-premium-gray/20">
-                {filteredMaintenances.map((maintenance) => (
-                  <div key={maintenance.id} className="p-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="px-2 py-0.5 bg-premium-gold/20 text-premium-gold rounded text-xs font-medium">
+            <div className="space-y-3">
+              {filteredMaintenances.map((maintenance) => (
+                <div 
+                  key={maintenance.id} 
+                  className="flex items-center justify-between p-4 bg-premium-darkGray/50 rounded-full hover:bg-primary/10 hover:shadow-glow-green-sm transition-all duration-300 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+                      <Wrench className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
+                      <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">
                         {maintenance.descricao || 'Manutenção'}
                       </span>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs ${getStatusColor(maintenance.status)}`}>
-                        {getStatusIcon(maintenance.status)}
-                        {maintenance.status.charAt(0).toUpperCase() + maintenance.status.slice(1)}
-                      </span>
-                    </div>
-                    {getVeiculoLabel(maintenance) && (
-                      <p className="text-xs text-blue-400 flex items-center gap-1 mb-2">
-                        <Car className="w-3 h-3" />
-                        {getVeiculoLabel(maintenance)}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-400">{displayLocaleDatetime(maintenance.data)}</p>
-                        {maintenance.proxima_manutencao_km && (
-                          <p className="text-xs text-gray-500">Próx: {formatNumber(maintenance.proxima_manutencao_km)} km</p>
-                        )}
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        {maintenance.status !== 'concluido' && (
-                          <button
-                            onClick={() => handleMarkComplete(maintenance.id)}
-                            className="p-2 text-gray-400 hover:text-green-500 hover:bg-green-500/10 rounded-lg transition-colors"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => openModal(maintenance)}
-                          className="p-2 text-gray-400 hover:text-white hover:bg-premium-gray rounded-lg transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => { setDeleteId(maintenance.id); setIsDeleteModalOpen(true); }}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      {maintenance.valor && (
+                        <span className="text-neutral text-sm">{formatCurrency(maintenance.valor)}</span>
+                      )}
+                      <span className="text-neutral text-sm">{displayLocaleDatetime(maintenance.data)}</span>
                     </div>
                   </div>
-                ))}
-              </div>
-            </>
+                  <div className="flex items-center gap-3">
+                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(maintenance.status)}`}>
+                      {getStatusIcon(maintenance.status)}
+                      {maintenance.status.charAt(0).toUpperCase() + maintenance.status.slice(1)}
+                    </span>
+                    <div className="flex gap-1">
+                      {maintenance.status !== 'concluido' && (
+                        <button
+                          onClick={() => handleMarkComplete(maintenance.id)}
+                          className="p-2 text-neutral hover:text-primary hover:bg-primary/10 rounded-full transition-all duration-200"
+                          title="Marcar como concluído"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => openModal(maintenance)}
+                        className="p-2 text-neutral hover:text-white hover:bg-premium-darkGray rounded-full transition-all duration-200"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteId(maintenance.id);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="p-2 text-neutral hover:text-negative hover:bg-negative/10 rounded-full transition-all duration-200"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </Card>
       </div>
 
-      {/* Add/Edit Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => {
@@ -585,7 +500,6 @@ export function MaintenancePage() {
         </form>
       </Modal>
 
-      {/* Delete Confirmation */}
       <ConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => {

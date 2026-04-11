@@ -22,12 +22,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={selectId}
           className={clsx(
-            'w-full px-4 py-3 bg-premium-gray text-white',
-            'border border-premium-gray/50 rounded-premium',
-            'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-            'transition-all duration-200',
+            'w-full px-4 py-3 bg-premium-darkGray text-white rounded-2xl',
+            'border border-white/10',
+            'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
+            'transition-all duration-200 ease-in-out',
             'disabled:opacity-50 disabled:cursor-not-allowed',
-            error && 'border-red-500 focus:ring-red-500',
+            error && 'border-negative focus:ring-negative/20',
             className
           )}
           {...props}
@@ -39,7 +39,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ))}
         </select>
         {error && (
-          <p className="mt-1 text-sm text-red-500">{error}</p>
+          <p className="mt-1 text-sm text-negative">{error}</p>
         )}
       </div>
     );

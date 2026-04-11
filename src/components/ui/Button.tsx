@@ -1,6 +1,5 @@
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { clsx } from 'clsx';
-import { useTheme } from '../ThemeContext';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'danger';
@@ -10,27 +9,22 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props }, ref) => {
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
     return (
       <button
         ref={ref}
         disabled={disabled || isLoading}
         className={clsx(
-          'inline-flex items-center justify-center font-bold transition-all duration-200 rounded-full',
-          'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
+          'inline-flex items-center justify-center font-semibold transition-all duration-200 ease-in-out',
+          'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-premium-black',
+          'disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none',
           {
-            // Fundo verde neon, texto branco (todos os temas)
-            'bg-primary text-white hover:bg-accent hover:shadow-[0_0_32px_0_rgba(57,255,20,0.25)]': variant === 'primary',
-            'bg-premium-gray text-white hover:bg-premium-darkGray': variant === 'secondary' && isDark,
-            'border-2 border-primary text-white hover:bg-primary hover:text-white': variant === 'outline' && isDark,
-            'bg-white text-primary hover:bg-gray-100': variant === 'secondary' && !isDark,
-            'border-2 border-primary text-white hover:bg-primary hover:text-white': variant === 'outline' && !isDark,
-            'bg-red-600 text-white hover:bg-red-700': variant === 'danger',
-            'px-4 py-2 text-base': size === 'sm',
-            'px-6 py-3 text-lg': size === 'md',
-            'px-8 py-4 text-xl': size === 'lg',
+            'bg-gradient-to-r from-primary to-secondary text-white hover:shadow-glow-green hover:scale-[1.02] active:scale-[0.98] rounded-2xl': variant === 'primary',
+            'bg-premium-darkGray text-white hover:bg-premium-gray rounded-2xl': variant === 'secondary',
+            'border-2 border-primary text-primary hover:bg-primary hover:text-white hover:shadow-glow-green-sm rounded-2xl': variant === 'outline',
+            'bg-negative text-white hover:bg-red-600 rounded-2xl': variant === 'danger',
+            'px-4 py-2 text-sm': size === 'sm',
+            'px-6 py-3 text-base': size === 'md',
+            'px-8 py-4 text-lg': size === 'lg',
           },
           className
         )}

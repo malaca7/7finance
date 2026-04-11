@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, TrendingDown, Filter } from 'lucide-react';
+import { Plus, Edit2, Trash2, TrendingDown } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Card, CardHeader, Button, Input, Select, Modal, ConfirmModal } from '../components/ui';
 import { MainLayout } from '../components/layout/MainLayout';
@@ -8,7 +8,7 @@ import { expensesApi } from '../api';
 import type { Expense, ExpenseType, DateFilter } from '../types';
 import { getLocalDatetimeForInput, displayLocaleDatetime } from '../utils/date';
 
-const EXPENSES_COLORS = ['#EF4444', '#F97316', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#E5C158'];
+const EXPENSES_COLORS = ['#EF4444', '#F97316', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#22C55E'];
 
 const expenseTypeOptions = [
   { value: 'abastecimento', label: 'Abastecimento' },
@@ -48,7 +48,6 @@ export function ExpensesPage() {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  // Form state
   const [tipo, setTipo] = useState<ExpenseType>('abastecimento');
   const [valor, setValor] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -71,13 +70,14 @@ export function ExpensesPage() {
       setIsLoading(false);
     }
   };
+
   const openModal = (expense?: Expense) => {
     if (expense) {
       setSelectedExpense(expense);
       setTipo(expense.tipo);
       setValor(expense.valor.toString());
       setDescricao(expense.descricao || '');
-      setData(expense.data); // Mantém a data original do registro
+      setData(expense.data);
     } else {
       setSelectedExpense(null);
       setTipo('abastecimento');
@@ -91,7 +91,6 @@ export function ExpensesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate - no negative values
     if (parseFloat(valor) < 0) {
       alert('Valor não pode ser negativo');
       return;
@@ -104,7 +103,7 @@ export function ExpensesPage() {
         tipo,
         valor: parseFloat(valor),
         descricao: descricao || undefined,
-        data, // Já possui a data/hora local correta
+        data,
       };
 
       let response;
@@ -161,16 +160,11 @@ export function ExpensesPage() {
     }).format(value);
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
-  };
-
   const getTypeLabel = (type: ExpenseType) => {
     const option = expenseTypeOptions.find(o => o.value === type);
     return option?.label || type;
   };
 
-  // Calculate totals
   const totalExpenses = expenses.reduce((sum, e) => sum + e.valor, 0);
   const totalEarnings = earnings.reduce((sum, e) => sum + e.valor, 0);
   const netProfit = totalEarnings - totalExpenses;
@@ -188,11 +182,10 @@ export function ExpensesPage() {
   return (
     <MainLayout>
       <div className="space-y-6 pb-40 md:pb-8">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Despesas</h1>
-            <p className="text-gray-400 mt-1">Controle seus custos operacionais</p>
+            <p className="text-neutral mt-1">Controle seus custos operacionais</p>
           </div>
           
           <div className="flex items-center gap-3">
@@ -205,40 +198,39 @@ export function ExpensesPage() {
           </div>
         </div>
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card variant="warning">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-red-500/20 rounded-premium">
-                <TrendingDown className="w-6 h-6 text-red-500" />
+              <div className="p-3 bg-negative/20 rounded-2xl">
+                <TrendingDown className="w-6 h-6 text-negative" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Total de Despesas</p>
-                <p className="text-xl font-bold text-white">{formatCurrency(totalExpenses)}</p>
+                <p className="text-sm text-neutral">Total de Despesas</p>
+                <p className="text-xl font-bold text-negative">{formatCurrency(totalExpenses)}</p>
               </div>
             </div>
           </Card>
 
           <Card>
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-premium-gold/20 rounded-premium">
-                <TrendingDown className="w-6 h-6 text-premium-gold" />
+              <div className="p-3 bg-primary/20 rounded-2xl">
+                <TrendingDown className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Total de Ganhos</p>
-                <p className="text-xl font-bold text-green-500">{formatCurrency(totalEarnings)}</p>
+                <p className="text-sm text-neutral">Total de Ganhos</p>
+                <p className="text-xl font-bold text-primary">{formatCurrency(totalEarnings)}</p>
               </div>
             </div>
           </Card>
 
           <Card variant={netProfit >= 0 ? 'highlight' : 'warning'}>
             <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-premium ${netProfit >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                <TrendingDown className={`w-6 h-6 ${netProfit >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+              <div className={`p-3 rounded-2xl ${netProfit >= 0 ? 'bg-primary/20' : 'bg-negative/20'}`}>
+                <TrendingDown className={`w-6 h-6 ${netProfit >= 0 ? 'text-primary' : 'text-negative'}`} />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Lucro Líquido</p>
-                <p className={`text-xl font-bold ${netProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <p className="text-sm text-neutral">Lucro Líquido</p>
+                <p className={`text-xl font-bold ${netProfit >= 0 ? 'text-primary' : 'text-negative'}`}>
                   {formatCurrency(netProfit)}
                 </p>
               </div>
@@ -246,7 +238,6 @@ export function ExpensesPage() {
           </Card>
         </div>
 
-        {/* Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader title="Despesas por Categoria" subtitle="Visualize seus gastos" />
@@ -266,7 +257,10 @@ export function ExpensesPage() {
                       <Cell key={`cell-${index}`} fill={EXPENSES_COLORS[index % EXPENSES_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
+                  <Tooltip 
+                    formatter={(value: any) => formatCurrency(Number(value))}
+                    contentStyle={{ backgroundColor: '#111827', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -274,7 +268,7 @@ export function ExpensesPage() {
               {chartData.map((item, index) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: EXPENSES_COLORS[index % EXPENSES_COLORS.length] }} />
-                  <span className="text-sm text-gray-400">{item.name}</span>
+                  <span className="text-sm text-neutral">{item.name}</span>
                 </div>
               ))}
             </div>
@@ -287,7 +281,10 @@ export function ExpensesPage() {
                 <BarChart data={chartData} layout="vertical">
                   <XAxis type="number" stroke="#6B7280" fontSize={12} tickFormatter={(v) => `R$ ${v}`} />
                   <YAxis type="category" dataKey="name" stroke="#6B7280" fontSize={12} width={90} />
-                  <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
+                  <Tooltip 
+                    formatter={(value: any) => formatCurrency(Number(value))}
+                    contentStyle={{ backgroundColor: '#111827', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px' }}
+                  />
                   <Bar dataKey="value" fill="#EF4444" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -295,99 +292,60 @@ export function ExpensesPage() {
           </Card>
         </div>
 
-        {/* List */}
         <Card>
           <CardHeader title="Histórico de Despesas" subtitle={`${expenses.length} registros`} />
           
           {expenses.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-neutral">
               <TrendingDown className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>Nenhuma despesa registrada ainda</p>
               <p className="text-sm mt-1">Clique em "Nova Despesa" para começar</p>
             </div>
           ) : (
-            <>
-              {/* Desktop Table */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-premium-gray/30">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Tipo</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Valor</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Descrição</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Data</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {expenses.map((expense) => (
-                      <tr key={expense.id} className="border-b border-premium-gray/20 hover:bg-premium-gray/20">
-                        <td className="py-3 px-4 text-red-400 font-medium">{getTypeLabel(expense.tipo)}</td>
-                        <td className="py-3 px-4 text-white font-medium">{formatCurrency(expense.valor)}</td>
-                        <td className="py-3 px-4 text-gray-400">{expense.descricao}</td>
-                        <td className="py-3 px-4 text-gray-400">{displayLocaleDatetime(expense.data)}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => openModal(expense)}
-                              className="p-2 text-gray-400 hover:text-white hover:bg-premium-gray rounded-premium transition-colors"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setDeleteId(expense.id);
-                                setIsDeleteModalOpen(true);
-                              }}
-                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-premium transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Cards */}
-              <div className="md:hidden divide-y divide-premium-gray/20">
-                {expenses.map((expense) => (
-                  <div key={expense.id} className="p-4 flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="px-2 py-0.5 bg-red-500/20 text-red-400 rounded text-xs font-medium">
-                          {getTypeLabel(expense.tipo)}
-                        </span>
-                        <span className="text-xs text-gray-500">{displayLocaleDatetime(expense.data)}</span>
-                      </div>
-                      <p className="text-white font-bold">{formatCurrency(expense.valor)}</p>
-                      {expense.descricao && <p className="text-xs text-gray-500 truncate">{expense.descricao}</p>}
+            <div className="space-y-3">
+              {expenses.map((expense) => (
+                <div 
+                  key={expense.id} 
+                  className="flex items-center justify-between p-4 bg-premium-darkGray/50 rounded-full hover:bg-negative/10 hover:shadow-[0_0_15px_rgba(239,68,68,0.15)] transition-all duration-300 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-negative/20 rounded-full flex items-center justify-center">
+                      <TrendingDown className="w-5 h-5 text-negative" />
                     </div>
-                    <div className="flex gap-1 ml-2 shrink-0">
+                    <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
+                      <span className="px-3 py-1 bg-negative/20 text-negative rounded-full text-sm font-medium">
+                        {getTypeLabel(expense.tipo)}
+                      </span>
+                      <span className="text-neutral text-sm">{displayLocaleDatetime(expense.data)}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <p className="text-xl font-bold text-negative">{formatCurrency(expense.valor)}</p>
+                    <div className="flex gap-1">
                       <button
                         onClick={() => openModal(expense)}
-                        className="p-2 text-gray-400 hover:text-white hover:bg-premium-gray rounded-lg transition-colors"
+                        className="p-2 text-neutral hover:text-white hover:bg-premium-darkGray rounded-full transition-all duration-200"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => { setDeleteId(expense.id); setIsDeleteModalOpen(true); }}
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                        onClick={() => {
+                          setDeleteId(expense.id);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="p-2 text-neutral hover:text-negative hover:bg-negative/10 rounded-full transition-all duration-200"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </>
+                </div>
+              ))}
+            </div>
           )}
         </Card>
       </div>
 
-      {/* Add/Edit Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => {
@@ -435,7 +393,7 @@ export function ExpensesPage() {
           <div className="flex gap-3 pt-4">
             <Button
               type="button"
-              variant="primary"
+              variant="secondary"
               onClick={() => {
                 setIsModalOpen(false);
                 resetForm();
@@ -451,7 +409,6 @@ export function ExpensesPage() {
         </form>
       </Modal>
 
-      {/* Delete Confirmation */}
       <ConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => {
@@ -465,7 +422,6 @@ export function ExpensesPage() {
         variant="danger"
       />
 
-      {/* Botão de Nova Despesa Flutuante e Centralizado (Mobile) */}
       <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-30 w-full px-4 flex justify-center text-center">
         <Button 
           onClick={() => openModal()} 
@@ -477,7 +433,6 @@ export function ExpensesPage() {
         </Button>
       </div>
 
-      {/* Botão de Nova Despesa Flutuante (Desktop - Ao lado do Sidebar) */}
       <div className="hidden md:block fixed bottom-8 transition-all duration-300 pointer-events-none z-30" 
            style={{ 
              left: isCollapsed ? '80px' : '256px',

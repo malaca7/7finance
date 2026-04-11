@@ -10,20 +10,19 @@ interface ThemeContextProps {
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Tema escuro como padrão
   const [theme, setTheme] = useState<Theme>('dark');
 
   useEffect(() => {
     if (theme === 'dark') {
       document.body.classList.add('dark');
       document.body.classList.remove('light');
-      document.body.style.backgroundColor = '#050505';
-      document.body.style.color = '#F0F0F0';
+      document.body.style.backgroundColor = '#0A0F1C';
+      document.body.style.color = '#F0F4FF';
     } else {
       document.body.classList.add('light');
       document.body.classList.remove('dark');
-      document.body.style.backgroundColor = '#fff';
-      document.body.style.color = '#222';
+      document.body.style.backgroundColor = '#0A0F1C';
+      document.body.style.color = '#F0F4FF';
     }
   }, [theme]);
 

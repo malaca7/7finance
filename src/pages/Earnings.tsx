@@ -8,7 +8,7 @@ import { earningsApi } from '../api';
 import type { Earnings, EarningsType, DateFilter } from '../types';
 import { getLocalDatetimeForInput, displayLocaleDatetime } from '../utils/date';
 
-const EARNINGS_COLORS = ['#D4AF37', '#22C55E', '#3B82F6'];
+const EARNINGS_COLORS = ['#22C55E', '#16A34A', '#065F46'];
 
 const earningsTypeOptions = [
   { value: 'corrida', label: 'Corrida' },
@@ -28,12 +28,10 @@ export function EarningsPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Escutar mudanças no localStorage (disparadas pelo Sidebar)
     const handleStorageChange = () => {
       setIsCollapsed(localStorage.getItem('sidebar_collapsed') === 'true');
     };
     
-    // Custom event para mudanças no mesmo documento
     window.addEventListener('sidebar-toggle', handleStorageChange);
     window.addEventListener('storage', handleStorageChange);
     
@@ -48,7 +46,6 @@ export function EarningsPage() {
   const [selectedEarning, setSelectedEarning] = useState<Earnings | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   
-  // Form state
   const [tipo, setTipo] = useState<EarningsType>('corrida');
   const [valor, setValor] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -78,7 +75,7 @@ export function EarningsPage() {
       setTipo(earning.tipo);
       setValor(earning.valor.toString());
       setDescricao(earning.descricao || '');
-      setData(earning.data); // Mantém a data original do registro
+      setData(earning.data);
     } else {
       setSelectedEarning(null);
       setTipo('corrida');
@@ -98,7 +95,7 @@ export function EarningsPage() {
         tipo,
         valor: parseFloat(valor),
         descricao: descricao || undefined,
-        data, // Já possui a data/hora local correta
+        data,
       };
 
       let response;
@@ -155,16 +152,11 @@ export function EarningsPage() {
     }).format(value);
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
-  };
-
   const getTypeLabel = (type: EarningsType) => {
     const option = earningsTypeOptions.find(o => o.value === type);
     return option?.label || type;
   };
 
-  // Calculate totals
   const totalEarnings = earnings.reduce((sum, e) => sum + e.valor, 0);
   const byType = earnings.reduce((acc, e) => {
     acc[e.tipo] = (acc[e.tipo] || 0) + e.valor;
@@ -180,11 +172,10 @@ export function EarningsPage() {
   return (
     <MainLayout>
       <div className="space-y-6 pb-32 md:pb-0">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Ganhos</h1>
-            <p className="text-gray-400 mt-1">Registre suas fontes de renda</p>
+            <p className="text-neutral mt-1">Registre suas fontes de renda</p>
           </div>
           
           <div className="flex items-center gap-3">
@@ -197,16 +188,15 @@ export function EarningsPage() {
           </div>
         </div>
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card variant="highlight">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-premium-gold/20 rounded-premium">
-                <TrendingUp className="w-6 h-6 text-premium-gold" />
+              <div className="p-3 bg-primary/20 rounded-2xl">
+                <TrendingUp className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Total de Ganhos</p>
-                <p className="text-xl font-bold text-white">{formatCurrency(totalEarnings)}</p>
+                <p className="text-sm text-neutral">Total de Ganhos</p>
+                <p className="text-xl font-bold text-primary">{formatCurrency(totalEarnings)}</p>
               </div>
             </div>
           </Card>
@@ -215,7 +205,7 @@ export function EarningsPage() {
             <Card key={option.value}>
               <div className="flex items-center gap-3">
                 <div 
-                  className="p-3 rounded-premium"
+                  className="p-3 rounded-2xl"
                   style={{ backgroundColor: `${EARNINGS_COLORS[earningsTypeOptions.findIndex(o => o.value === option.value)]}20` }}
                 >
                   <TrendingUp 
@@ -224,7 +214,7 @@ export function EarningsPage() {
                   />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">{option.label}</p>
+                  <p className="text-sm text-neutral">{option.label}</p>
                   <p className="text-xl font-bold text-white">{formatCurrency(byType[option.value as EarningsType] || 0)}</p>
                 </div>
               </div>
@@ -232,7 +222,6 @@ export function EarningsPage() {
           ))}
         </div>
 
-        {/* Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader title="Distribuição por Tipo" subtitle="Visualize seus ganhos" />
@@ -252,7 +241,10 @@ export function EarningsPage() {
                       <Cell key={`cell-${index}`} fill={EARNINGS_COLORS[index]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
+                  <Tooltip 
+                    formatter={(value: any) => formatCurrency(Number(value))}
+                    contentStyle={{ backgroundColor: '#111827', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '12px' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -260,7 +252,7 @@ export function EarningsPage() {
               {chartData.map((item, index) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: EARNINGS_COLORS[index] }} />
-                  <span className="text-sm text-gray-400">{item.name}</span>
+                  <span className="text-sm text-neutral">{item.name}</span>
                 </div>
               ))}
             </div>
@@ -273,117 +265,71 @@ export function EarningsPage() {
                 <BarChart data={chartData}>
                   <XAxis dataKey="name" stroke="#6B7280" fontSize={12} />
                   <YAxis stroke="#6B7280" fontSize={12} tickFormatter={(v) => `R$ ${v}`} />
-                  <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
-                  <Bar dataKey="value" fill="#D4AF37" radius={[4, 4, 0, 0]} />
+                  <Tooltip 
+                    formatter={(value: any) => formatCurrency(Number(value))}
+                    contentStyle={{ backgroundColor: '#111827', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '12px' }}
+                  />
+                  <Bar dataKey="value" fill="#22C55E" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </Card>
         </div>
 
-        {/* List */}
         <Card>
           <CardHeader title="Histórico de Ganhos" subtitle={`${earnings.length} registros`} />
           
           {earnings.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-neutral">
               <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>Nenhum ganho registrado ainda</p>
               <p className="text-sm mt-1">Clique em "Novo Ganho" para começar</p>
             </div>
           ) : (
-            <>
-              {/* Desktop Table */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-premium-gray/30">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Tipo</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Valor</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Descrição</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Data</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {earnings.map((earning) => (
-                      <tr key={earning.id} className="border-b border-premium-gray/20 hover:bg-premium-gray/20">
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-1 bg-premium-gold/20 text-premium-gold rounded text-sm">
-                            {getTypeLabel(earning.tipo)}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-white font-medium">
-                          {formatCurrency(earning.valor)}
-                        </td>
-                        <td className="py-3 px-4 text-gray-400">
-                          {earning.descricao || '-'}
-                        </td>
-                        <td className="py-3 px-4 text-gray-400">
-                          {displayLocaleDatetime(earning.data)}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => openModal(earning)}
-                              className="p-2 text-gray-400 hover:text-white hover:bg-premium-gray rounded-premium transition-colors"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setDeleteId(earning.id);
-                                setIsDeleteModalOpen(true);
-                              }}
-                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-premium transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Cards */}
-              <div className="md:hidden divide-y divide-premium-gray/20">
-                {earnings.map((earning) => (
-                  <div key={earning.id} className="p-4 flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="px-2 py-0.5 bg-premium-gold/20 text-premium-gold rounded text-xs font-medium">
-                          {getTypeLabel(earning.tipo)}
-                        </span>
-                        <span className="text-xs text-gray-500">{displayLocaleDatetime(earning.data)}</span>
-                      </div>
-                      <p className="text-white font-bold">{formatCurrency(earning.valor)}</p>
-                      {earning.descricao && <p className="text-xs text-gray-500 truncate">{earning.descricao}</p>}
+            <div className="space-y-3">
+              {earnings.map((earning) => (
+                <div 
+                  key={earning.id} 
+                  className="flex items-center justify-between p-4 bg-premium-darkGray/50 rounded-full hover:bg-primary/10 hover:shadow-glow-green-sm transition-all duration-300 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 text-primary" />
                     </div>
-                    <div className="flex gap-1 ml-2 shrink-0">
+                    <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
+                      <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">
+                        {getTypeLabel(earning.tipo)}
+                      </span>
+                      <span className="text-neutral text-sm">{displayLocaleDatetime(earning.data)}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <p className="text-xl font-bold text-primary">{formatCurrency(earning.valor)}</p>
+                    <div className="flex gap-1">
                       <button
                         onClick={() => openModal(earning)}
-                        className="p-2 text-gray-400 hover:text-white hover:bg-premium-gray rounded-lg transition-colors"
+                        className="p-2 text-neutral hover:text-white hover:bg-premium-darkGray rounded-full transition-all duration-200"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => { setDeleteId(earning.id); setIsDeleteModalOpen(true); }}
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                        onClick={() => {
+                          setDeleteId(earning.id);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="p-2 text-neutral hover:text-negative hover:bg-negative/10 rounded-full transition-all duration-200"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </>
+                </div>
+              ))}
+            </div>
           )}
         </Card>
       </div>
 
-      {/* Add/Edit Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => {
@@ -431,7 +377,7 @@ export function EarningsPage() {
           <div className="flex gap-3 pt-4">
             <Button
               type="button"
-              variant="primary"
+              variant="secondary"
               onClick={() => {
                 setIsModalOpen(false);
                 resetForm();
@@ -447,7 +393,6 @@ export function EarningsPage() {
         </form>
       </Modal>
 
-      {/* Delete Confirmation */}
       <ConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => {
@@ -461,7 +406,6 @@ export function EarningsPage() {
         variant="danger"
       />
 
-      {/* Botão de Novo Ganho Flutuante e Centralizado (Mobile) */}
       <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-30 w-full px-4 flex justify-center">
         <Button 
           onClick={() => openModal()} 
@@ -473,7 +417,6 @@ export function EarningsPage() {
         </Button>
       </div>
 
-      {/* Botão de Novo Ganho Flutuante (Desktop - Ao lado do Sidebar) */}
       <div className="hidden md:block fixed bottom-8 transition-all duration-300 pointer-events-none z-30" 
            style={{ 
              left: isCollapsed ? '80px' : '256px',

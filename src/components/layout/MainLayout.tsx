@@ -6,7 +6,6 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-  // Estado para saber se a sidebar está colapsada
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
@@ -20,7 +19,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   }, []);
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-main-gradient bg-no-repeat bg-cover flex flex-col lg:flex-row overflow-x-hidden max-w-[100vw] relative">
+    <div className="min-h-screen min-h-[100dvh] bg-premium-black flex flex-col lg:flex-row overflow-x-hidden max-w-[100vw] relative">
       <Sidebar />
       <main
         className={

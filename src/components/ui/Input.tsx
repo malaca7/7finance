@@ -25,7 +25,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative group">
           {icon && (
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral group-focus-within:text-primary transition-colors">
               {icon}
             </div>
           )}
@@ -34,14 +34,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={inputType}
             className={clsx(
-              'w-full bg-premium-darkGray text-premium-text placeholder-premium-muted',
-              'border-2 border-premium-gray/40 rounded-full px-5 py-3 text-lg focus:border-premium-limao focus:ring-2 focus:ring-premium-limao',
-              'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-              'transition-all duration-200',
+              'w-full bg-premium-darkGray text-white placeholder-neutral',
+              'border border-white/10 rounded-2xl px-5 py-3 text-base',
+              'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
+              'transition-all duration-200 ease-in-out',
               'disabled:opacity-50 disabled:cursor-not-allowed',
               icon ? 'pl-11 pr-4 py-3' : 'px-4 py-3',
               isPassword && 'pr-12',
-              error && 'border-red-500 focus:ring-red-500',
+              error && 'border-negative focus:ring-negative/20',
               className
             )}
             {...props}
@@ -50,14 +50,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral hover:text-primary transition-colors"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           )}
         </div>
         {error && (
-          <p className="mt-1 text-sm text-red-500">{error}</p>
+          <p className="mt-1 text-sm text-negative">{error}</p>
         )}
       </div>
     );

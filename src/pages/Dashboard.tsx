@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, DollarSign, Gauge, AlertTriangle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
@@ -8,21 +8,8 @@ import { useAppStore } from '../store';
 import { dashboardApi, earningsApi, expensesApi, kmApi } from '../api';
 import type { DateFilter } from '../types';
 
-const COLORS = {
-  neon: '#39FF14',
-  neonLight: '#66FF66',
-  green: '#22C55E',
-  red: '#EF4444',
-  blue: '#3B82F6',
-  purple: '#8B5CF6',
-  orange: '#F97316',
-  pink: '#EC4899',
-  cyan: '#06B6D4',
-  lime: '#84CC16',
-};
-
-const EARNINGS_COLORS = ['#39FF14', '#22C55E', '#3B82F6'];
-const EXPENSES_COLORS = ['#EF4444', '#F97316', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#66FF66'];
+const EARNINGS_COLORS = ['#22C55E', '#16A34A', '#065F46'];
+const EXPENSES_COLORS = ['#EF4444', '#F97316', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#22C55E'];
 
 const filterOptions = [
   { value: 'diario', label: 'Hoje' },
@@ -99,13 +86,12 @@ export function DashboardPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-white drop-shadow-lg">
-              Olá, <span className="text-primary">{user?.nome?.split(' ')[0]}</span>! 👋
+            <h1 className="text-3xl font-extrabold text-white">
+              Olá, <span className="text-primary">{user?.nome?.split(' ')[0]}</span>!
             </h1>
-            <p className="text-premium-muted mt-1 text-lg">Veja o resumo das suas finanças</p>
+            <p className="text-neutral mt-1 text-lg">Veja o resumo das suas finanças</p>
           </div>
           
           <Select
@@ -116,76 +102,69 @@ export function DashboardPage() {
           />
         </div>
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Total Earnings */}
           <Card variant="highlight" className="relative overflow-hidden">
-            <div className="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-primary/20 via-accent/10 to-primary/10 rounded-full -mr-8 -mt-8" />
+            <div className="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent rounded-full -mr-8 -mt-8" />
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10 rounded-premium">
-                  <TrendingUp className="w-5 h-5 text-primary drop-shadow-[0_0_8px_#39FF14]" />
+                <div className="p-2 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl">
+                  <TrendingUp className="w-5 h-5 text-primary" />
                 </div>
                 <span className="text-primary text-base font-semibold">Total Ganhos</span>
               </div>
-              <p className="text-3xl font-extrabold text-white drop-shadow">
+              <p className="text-3xl font-extrabold text-white">
                 {formatCurrency(summary?.totalGanhos || 0)}
               </p>
             </div>
           </Card>
 
-          {/* Total Expenses */}
           <Card className="relative overflow-hidden">
-            <div className="absolute right-0 top-0 w-24 h-24 bg-red-500/10 rounded-full -mr-8 -mt-8" />
+            <div className="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-negative/20 to-transparent rounded-full -mr-8 -mt-8" />
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-red-500/20 rounded-premium">
-                  <TrendingDown className="w-5 h-5 text-red-500" />
+                <div className="p-2 bg-negative/20 rounded-2xl">
+                  <TrendingDown className="w-5 h-5 text-negative" />
                 </div>
-                <span className="text-premium-muted text-base font-semibold">Total Despesas</span>
+                <span className="text-neutral text-base font-semibold">Total Despesas</span>
               </div>
-              <p className="text-3xl font-extrabold text-white drop-shadow">
+              <p className="text-3xl font-extrabold text-white">
                 {formatCurrency(summary?.totalDespesas || 0)}
               </p>
             </div>
           </Card>
 
-          {/* Net Profit */}
           <Card variant={(summary?.lucroLiquido || 0) >= 0 ? 'highlight' : 'warning'} className="relative overflow-hidden">
-            <div className="absolute right-0 top-0 w-24 h-24 bg-green-500/10 rounded-full -mr-8 -mt-8" />
+            <div className="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-primary/20 to-transparent rounded-full -mr-8 -mt-8" />
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-2">
-                <div className={`p-2 rounded-premium ${(summary?.lucroLiquido || 0) >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                  <DollarSign className={`w-5 h-5 ${(summary?.lucroLiquido || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                <div className={`p-2 rounded-2xl ${(summary?.lucroLiquido || 0) >= 0 ? 'bg-primary/20' : 'bg-negative/20'}`}>
+                  <DollarSign className={`w-5 h-5 ${(summary?.lucroLiquido || 0) >= 0 ? 'text-primary' : 'text-negative'}`} />
                 </div>
-                <span className="text-accent text-base font-semibold">Lucro Líquido</span>
+                <span className={`text-base font-semibold ${(summary?.lucroLiquido || 0) >= 0 ? 'text-primary' : 'text-negative'}`}>Lucro Líquido</span>
               </div>
-              <p className={`text-3xl font-extrabold drop-shadow ${(summary?.lucroLiquido || 0) >= 0 ? 'text-green-400' : 'text-red-500'}`}>
+              <p className={`text-3xl font-extrabold ${(summary?.lucroLiquido || 0) >= 0 ? 'text-primary' : 'text-negative'}`}>
                 {formatCurrency(summary?.lucroLiquido || 0)}
               </p>
             </div>
           </Card>
 
-          {/* KM Rodados */}
           <Card className="relative overflow-hidden">
-            <div className="absolute right-0 top-0 w-24 h-24 bg-blue-500/10 rounded-full -mr-8 -mt-8" />
+            <div className="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-blue-500/20 to-transparent rounded-full -mr-8 -mt-8" />
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-blue-500/20 rounded-premium">
+                <div className="p-2 bg-blue-500/20 rounded-2xl">
                   <Gauge className="w-5 h-5 text-blue-500" />
                 </div>
-                <span className="text-premium-muted text-base font-semibold">KM Rodados</span>
+                <span className="text-neutral text-base font-semibold">KM Rodados</span>
               </div>
-              <p className="text-3xl font-extrabold text-white drop-shadow">
+              <p className="text-3xl font-extrabold text-white">
                 {formatNumber(summary?.kmRodados || 0)} km
               </p>
             </div>
           </Card>
         </div>
 
-        {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Earnings Chart */}
           <Card>
             <CardHeader title="Ganhos por Tipo" subtitle="Distribuição das entradas" />
             <div className="h-64">
@@ -207,8 +186,8 @@ export function DashboardPage() {
                   <Tooltip
                     formatter={(value: any) => formatCurrency(Number(value))}
                     contentStyle={{
-                      backgroundColor: '#1A1A1A',
-                      border: '1px solid #2A2A2A',
+                      backgroundColor: '#111827',
+                      border: '1px solid rgba(34,197,94,0.2)',
                       borderRadius: '12px',
                     }}
                   />
@@ -219,13 +198,12 @@ export function DashboardPage() {
               {earningsData.map((item, index) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: EARNINGS_COLORS[index] }} />
-                  <span className="text-sm text-gray-400">{item.name}</span>
+                  <span className="text-sm text-neutral">{item.name}</span>
                 </div>
               ))}
             </div>
           </Card>
 
-          {/* Expenses Chart */}
           <Card>
             <CardHeader title="Despesas por Tipo" subtitle="Categoria de gastos" />
             <div className="h-64">
@@ -236,8 +214,8 @@ export function DashboardPage() {
                   <Tooltip
                     formatter={(value: any) => formatCurrency(Number(value))}
                     contentStyle={{
-                      backgroundColor: '#1A1A1A',
-                      border: '1px solid #2A2A2A',
+                      backgroundColor: '#111827',
+                      border: '1px solid rgba(239,68,68,0.2)',
                       borderRadius: '12px',
                     }}
                   />
@@ -248,36 +226,35 @@ export function DashboardPage() {
           </Card>
         </div>
 
-        {/* Quick Actions */}
         <Card>
           <CardHeader title="Ações Rápidas" subtitle="Acesse as principais funcionalidades" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link
               to="/ganhos"
-              className="flex flex-col items-center gap-2 p-4 bg-premium-gray/30 rounded-premium hover:bg-premium-gold/10 transition-colors group"
+              className="flex flex-col items-center gap-2 p-4 bg-premium-darkGray/50 rounded-2xl hover:bg-primary/10 hover:shadow-glow-green-sm transition-all duration-300 group"
             >
-              <TrendingUp className="w-8 h-8 text-premium-gold group-hover:text-premium-goldLight" />
+              <TrendingUp className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
               <span className="text-sm text-gray-300">Registrar Ganho</span>
             </Link>
             <Link
               to="/despesas"
-              className="flex flex-col items-center gap-2 p-4 bg-premium-gray/30 rounded-premium hover:bg-red-500/10 transition-colors group"
+              className="flex flex-col items-center gap-2 p-4 bg-premium-darkGray/50 rounded-2xl hover:bg-negative/10 transition-all duration-300 group"
             >
-              <TrendingDown className="w-8 h-8 text-red-500 group-hover:text-red-400" />
+              <TrendingDown className="w-8 h-8 text-negative group-hover:scale-110 transition-transform" />
               <span className="text-sm text-gray-300">Registrar Despesa</span>
             </Link>
             <Link
               to="/km"
-              className="flex flex-col items-center gap-2 p-4 bg-premium-gray/30 rounded-premium hover:bg-blue-500/10 transition-colors group"
+              className="flex flex-col items-center gap-2 p-4 bg-premium-darkGray/50 rounded-2xl hover:bg-blue-500/10 transition-all duration-300 group"
             >
-              <Gauge className="w-8 h-8 text-blue-500 group-hover:text-blue-400" />
+              <Gauge className="w-8 h-8 text-blue-500 group-hover:scale-110 transition-transform" />
               <span className="text-sm text-gray-300">Registrar KM</span>
             </Link>
             <Link
               to="/manutencao"
-              className="flex flex-col items-center gap-2 p-4 bg-premium-gray/30 rounded-premium hover:bg-orange-500/10 transition-colors group"
+              className="flex flex-col items-center gap-2 p-4 bg-premium-darkGray/50 rounded-2xl hover:bg-orange-500/10 transition-all duration-300 group"
             >
-              <AlertTriangle className="w-8 h-8 text-orange-500 group-hover:text-orange-400" />
+              <AlertTriangle className="w-8 h-8 text-orange-500 group-hover:scale-110 transition-transform" />
               <span className="text-sm text-gray-300">Manutenção</span>
             </Link>
           </div>
