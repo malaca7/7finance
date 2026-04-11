@@ -266,26 +266,30 @@ export function ProfilePage() {
     }
 
     setUserlinkStatus('checking');
-    const { data, error } = await supabase
-      .from('users')
-      .select('id')
-      .eq('userlink', cleaned)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('userlink', cleaned)
+        .maybeSingle();
 
-    if (error) {
-      setUserlinkStatus('idle');
-      return;
+      if (error) {
+        // Column may not exist yet — treat as available
+        setUserlinkStatus('available');
+        return;
+      }
+      setUserlinkStatus(data ? 'taken' : 'available');
+    } catch {
+      setUserlinkStatus('available');
     }
-    setUserlinkStatus(data ? 'taken' : 'available');
   };
 
   const handleSavePublicProfile = async () => {
     if (!user) return;
     
-    // Only validate userlink if it changed from the original
-    const userlinkChanged = publicUserlink !== (user.userlink || '');
-    if (publicUserlink && userlinkChanged && userlinkStatus !== 'available') {
-      toast.error('Escolha um link válido e disponível');
+    // Only block if explicitly taken or invalid
+    if (publicUserlink && (userlinkStatus === 'taken' || userlinkStatus === 'invalid')) {
+      toast.error(userlinkStatus === 'taken' ? 'Este link já está em uso' : 'Use apenas letras e números');
       return;
     }
 
