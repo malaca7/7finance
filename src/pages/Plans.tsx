@@ -118,8 +118,8 @@ export function PlansPage() {
         }))
       : [
           { nome: 'free', nome_display: 'Free', preco: 0, preco_anual: 0, descricao: 'Comece a organizar suas finanças sem custo' },
-          { nome: 'pro', nome_display: 'Pro', preco: 29.90, preco_anual: 299.00, descricao: 'Para motoristas que querem crescer com inteligência' },
-          { nome: 'premium', nome_display: 'Premium', preco: 59.90, preco_anual: 599.00, descricao: 'Controle total e recursos exclusivos para profissionais' },
+          { nome: 'pro', nome_display: 'Pro', preco: 9.90, preco_anual: 99.00, descricao: 'Para motoristas que querem crescer com inteligência' },
+          { nome: 'premium', nome_display: 'Premium', preco: 19.90, preco_anual: 199.00, descricao: 'Controle total e recursos exclusivos para profissionais' },
         ];
 
   return (

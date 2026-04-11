@@ -97,8 +97,8 @@ INSERT INTO public.planos (nome, nome_display, descricao, preco, preco_anual, or
   'pro',
   'Pro',
   'Para motoristas que querem crescer com inteligência',
-  29.90,
-  299.00,
+  9.90,
+  99.00,
   2,
   '[
     {"key": "dashboard_completo", "label": "Dashboard completo com gráficos"},
@@ -115,8 +115,8 @@ INSERT INTO public.planos (nome, nome_display, descricao, preco, preco_anual, or
   'premium',
   'Premium',
   'Controle total e recursos exclusivos para profissionais',
-  59.90,
-  599.00,
+  19.90,
+  199.00,
   3,
   '[
     {"key": "tudo_pro", "label": "Tudo do plano Pro"},
