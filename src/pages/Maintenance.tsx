@@ -433,71 +433,88 @@ export function MaintenancePage() {
               {filteredMaintenances.map((maintenance) => (
                 <div 
                   key={maintenance.id} 
-                  className="flex items-center justify-between p-4 bg-premium-darkGray/50 rounded-2xl hover:bg-primary/10 hover:shadow-glow-green-sm transition-all duration-300 group"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-premium-darkGray/50 rounded-3xl sm:rounded-2xl hover:bg-primary/10 hover:shadow-glow-green-sm transition-all duration-300 group gap-4"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
-                      <Wrench className="w-5 h-5 text-primary" />
+                  <div className="flex items-start sm:items-center gap-4">
+                    <div className="w-12 h-12 sm:w-10 sm:h-10 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
+                      <Wrench className="w-6 h-6 sm:w-5 sm:h-5 text-primary" />
                     </div>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1.5 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">
+                        <span className="px-3 py-0.5 bg-primary/20 text-primary rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider">
                           {maintenance.descricao || 'Manutenção'}
                         </span>
                         {getVeiculoLabel(maintenance) && (
-                          <span className="px-2 py-0.5 bg-blue-500/15 text-blue-400 rounded-full text-xs flex items-center gap-1">
+                          <span className="px-2 py-0.5 bg-blue-500/15 text-blue-400 rounded-full text-[10px] sm:text-xs flex items-center gap-1 font-medium italic">
                             <Car className="w-3 h-3" />
                             {getVeiculoLabel(maintenance)}
                           </span>
                         )}
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest sm:hidden ${getStatusColor(maintenance.status)}`}>
+                          {maintenance.status}
+                        </span>
                       </div>
-                      <div className="flex flex-wrap items-center gap-3">
+                      
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-neutral text-xs">
+                        <span className="font-medium">{displayLocaleDatetime(maintenance.data)}</span>
+                        
                         {maintenance.proxima_manutencao_km && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/15 border border-amber-500/25 text-amber-400 rounded-full text-xs font-semibold">
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z"/><path d="M12 6v6l4 2"/></svg>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg font-bold">
                             Próx: {formatNumber(maintenance.proxima_manutencao_km)} km
                           </span>
                         )}
+                        
                         {maintenance.km_registro && (
-                          <span className="text-neutral/80 text-xs">
-                            Feito em {formatNumber(maintenance.km_registro)} km
+                          <span className="opacity-70">
+                            Registro: {formatNumber(maintenance.km_registro)} km
                           </span>
                         )}
-                        {maintenance.valor ? (
-                          <span className="text-white font-semibold text-sm">{formatCurrency(maintenance.valor)}</span>
-                        ) : null}
-                        <span className="text-neutral text-xs">{displayLocaleDatetime(maintenance.data)}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(maintenance.status)}`}>
-                      {getStatusIcon(maintenance.status)}
-                      {maintenance.status.charAt(0).toUpperCase() + maintenance.status.slice(1)}
-                    </span>
-                    <div className="flex gap-1">
+
+                  <div className="flex items-center justify-between sm:justify-end gap-4 border-t border-white/5 pt-3 sm:pt-0 sm:border-0 min-w-0">
+                    <div className="flex flex-col sm:items-end">
+                      {maintenance.valor > 0 && (
+                        <p className="text-lg sm:text-xl font-black text-white">
+                          {formatCurrency(maintenance.valor)}
+                        </p>
+                      )}
+                      <span className={`hidden sm:inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${getStatusColor(maintenance.status)}`}>
+                        {getStatusIcon(maintenance.status)}
+                        {maintenance.status}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-1.5">
                       {maintenance.status !== 'concluido' && (
                         <button
                           onClick={() => handleMarkComplete(maintenance.id)}
-                          className="p-2 text-neutral hover:text-primary hover:bg-primary/10 rounded-full transition-all duration-200"
-                          title="Marcar como concluído"
+                          className="p-3 sm:p-2 text-neutral hover:text-primary bg-white/5 sm:bg-transparent hover:bg-primary/20 rounded-full transition-all duration-200"
                         >
-                          <CheckCircle className="w-4 h-4" />
+                          <CheckCircle className="w-5 h-5 sm:w-4 sm:h-4" />
                         </button>
                       )}
                       <button
                         onClick={() => openModal(maintenance)}
-                        className="p-2 text-neutral hover:text-white hover:bg-premium-darkGray rounded-full transition-all duration-200"
+                        className="p-3 sm:p-2 text-neutral hover:text-white bg-white/5 sm:bg-transparent hover:bg-premium-darkGray rounded-full transition-all duration-200"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-5 h-5 sm:w-4 sm:h-4" />
                       </button>
                       <button
                         onClick={() => {
                           setDeleteId(maintenance.id);
                           setIsDeleteModalOpen(true);
                         }}
-                        className="p-2 text-neutral hover:text-negative hover:bg-negative/10 rounded-full transition-all duration-200"
+                        className="p-3 sm:p-2 text-neutral hover:text-negative bg-white/5 sm:bg-transparent hover:bg-negative/20 rounded-full transition-all duration-200"
                       >
+                        <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
