@@ -260,26 +260,8 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
         // Também atualiza o estado de visualização na tabela se o admin quiser ver lá também
         setVisiblePasswords(prev => ({ ...prev, [userIdToReset]: res.data!.newPassword }));
         
-        toast.success('Senha redefinida com sucesso!');
-        setManualPassword('');
-      } else {
-        toast.error(res.error || 'Erro ao redefinir senha');
-      }
-    } catch (err: any) {
-      toast.error(err.message || 'Erro inesperado');
-    } finally {
-      setIsResettingPassword(false);
-    }
-  };
-      if (res.success && res.data) {
-        setGeneratedPassword({
-          password: res.data.newPassword,
-          email: res.data.email,
-          name: res.data.name
-        });
         await logsApi.create('REDEFINIR_SENHA', `Redefiniu senha do usuário ID ${userIdToReset} (${resetType})`);
         toast.success(resetType === 'random' ? 'Senha aleatória gerada!' : 'Senha manual definida!');
-        setIsResetModalOpen(false);
         setManualPassword('');
       } else {
         toast.error(res.error || 'Erro ao redefinir senha');
