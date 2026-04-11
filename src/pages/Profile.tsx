@@ -9,7 +9,8 @@ import {
   Crop as CropIcon,
   Shield,
   Plus,
-  Trash2
+  Trash2,
+  Edit2
 } from 'lucide-react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { Card, Button, Input, Select, Modal } from '../components/ui';
@@ -379,7 +380,7 @@ export function ProfilePage() {
                       variant="primary"
                       className="flex-1"
                     >
-                      <Settings2 className="w-4 h-4 mr-2" />
+                      <Edit2 className="w-4 h-4 mr-2" />
                       Editar
                     </Button>
                     <Button 
