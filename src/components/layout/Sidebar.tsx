@@ -18,11 +18,16 @@ import {
   BarChart3,
   FileText,
   AlertTriangle,
-  Send
+  Send,
+  Lock
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store';
+import { usePlanAccess } from '../../hooks/usePlanAccess';
+import { canAccessRoute, getRouteMinPlan } from '../../config/planRoutes';
+import { UpgradeModal } from '../plans/UpgradeModal';
 import { clsx } from 'clsx';
+import type { PlanType } from '../../types';
 
 type MenuItem = {
   path: string;
@@ -88,9 +93,11 @@ export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAppStore();
+  const { planName } = usePlanAccess();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
+  const [upgradeTarget, setUpgradeTarget] = useState<{ plan: PlanType; label: string } | null>(null);
 
   const [expandedCategories, setExpandedCategories] = useState<string[]>(() => {
     const saved = sessionStorage.getItem('sidebar_categories');
@@ -140,6 +147,33 @@ export function Sidebar() {
 
   const renderMenuItem = (item: MenuItem, isActive: boolean, customActiveClass?: string) => {
     const Icon = item.icon;
+    const hasAccess = canAccessRoute(planName as PlanType, item.path);
+
+    if (!hasAccess) {
+      const requiredPlan = getRouteMinPlan(item.path);
+      return (
+        <button
+          key={item.path}
+          onClick={() => setUpgradeTarget({ plan: requiredPlan, label: item.label })}
+          className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 font-semibold text-neutral/40 hover:bg-white/5 w-full group"
+          title={`Requer plano ${requiredPlan === 'pro' ? 'Pro' : 'Premium'}`}
+        >
+          <div className="relative shrink-0">
+            <Icon className="w-7 h-7" />
+            <Lock className="w-3 h-3 absolute -bottom-0.5 -right-0.5 text-amber-400" />
+          </div>
+          {!isCollapsed && (
+            <>
+              <span className="text-lg font-semibold leading-none truncate">{item.label}</span>
+              <span className="ml-auto text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                {requiredPlan === 'pro' ? 'Pro' : 'Premium'}
+              </span>
+            </>
+          )}
+        </button>
+      );
+    }
+
     return (
       <Link
         key={item.path}
@@ -248,6 +282,26 @@ export function Sidebar() {
         {personalCategories.flatMap(category => category.items).map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
+          const hasAccess = canAccessRoute(planName as PlanType, item.path);
+
+          if (!hasAccess) {
+            const requiredPlan = getRouteMinPlan(item.path);
+            return (
+              <button
+                key={item.path}
+                onClick={() => setUpgradeTarget({ plan: requiredPlan, label: item.label })}
+                className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200 rounded-xl mx-0.5 text-neutral/30"
+                style={{ fontSize: 11 }}
+              >
+                <div className="relative">
+                  <Icon className="w-6 h-6" />
+                  <Lock className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1 text-amber-400" />
+                </div>
+                <span className="truncate max-w-[65px] text-[10px] text-neutral/30">{item.label}</span>
+              </button>
+            );
+          }
+
           return (
             <Link
               key={item.path}
@@ -264,6 +318,14 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={!!upgradeTarget}
+        onClose={() => setUpgradeTarget(null)}
+        featureName={upgradeTarget?.label}
+        requiredPlan={upgradeTarget?.plan ?? 'pro'}
+      />
     </>
   );
 }

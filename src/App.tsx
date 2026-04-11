@@ -4,6 +4,8 @@ import { useAppStore } from './store';
 import { ScrollToTop } from './components/ScrollToTop';
 import { NotificationPermissionPrompt } from './components/notifications/NotificationPermissionPrompt';
 import { Toaster } from 'react-hot-toast';
+import { canAccessRoute } from './config/planRoutes';
+import type { PlanType } from './types';
 
 // Pages
 import { LoginPage } from './pages/Login';
@@ -87,6 +89,18 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Plan-gated Route Component — redirects to /planos if plan is insufficient
+function PlanRoute({ children, path }: { children: React.ReactNode; path: string }) {
+  const { isAuthenticated } = useAppStore();
+  const userPlan = usePlanStore((s) => s.userPlan);
+  const planName: PlanType = (userPlan?.plano_nome ?? 'free') as PlanType;
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!canAccessRoute(planName, path)) return <Navigate to="/planos" replace />;
+
+  return <>{children}</>;
+}
+
 function App() {
   const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
   const { user } = useAppStore();
@@ -163,7 +177,9 @@ function App() {
           path="/km"
           element={
             <ProtectedRoute>
-              <KmPage />
+              <PlanRoute path="/km">
+                <KmPage />
+              </PlanRoute>
             </ProtectedRoute>
           }
         />
@@ -172,7 +188,9 @@ function App() {
           path="/manutencao"
           element={
             <ProtectedRoute>
-              <MaintenancePage />
+              <PlanRoute path="/manutencao">
+                <MaintenancePage />
+              </PlanRoute>
             </ProtectedRoute>
           }
         />
@@ -199,7 +217,9 @@ function App() {
           path="/notifications"
           element={
             <ProtectedRoute>
-              <NotificationsHistoryPage />
+              <PlanRoute path="/notifications">
+                <NotificationsHistoryPage />
+              </PlanRoute>
             </ProtectedRoute>
           }
         />
@@ -208,7 +228,9 @@ function App() {
           path="/chat"
           element={
             <ProtectedRoute>
-              <ChatPage />
+              <PlanRoute path="/chat">
+                <ChatPage />
+              </PlanRoute>
             </ProtectedRoute>
           }
         />
