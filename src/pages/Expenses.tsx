@@ -486,13 +486,6 @@ export function ExpensesPage() {
         <div className="pl-10 pointer-events-auto">
           <Button 
             onClick={() => openModal()} 
-            variant="danger"
-            className="h-14 px-6 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-2xl shadow-red-900/40 border border-red-400/20 active:scale-95 transition-all flex items-center gap-2 group"
-          >
-            <Plus className="w-5 h-5 group-hover:scale-125 transition-transform" />
-            <span className="font-bold text-sm">NOVA DESPESA</span>
-          <Button 
-            onClick={() => openModal()} 
             variant="primary"
             className="h-14 px-6 flex items-center gap-2 group font-bold text-lg"
           >
