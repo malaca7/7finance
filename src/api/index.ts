@@ -62,82 +62,78 @@ export const authApi = {
   async login(telefone: string, senha: string): Promise<ApiResponse<{ user: User; token: string }>> {
     try {
       const cleanPhone = telefone.replace(/\D/g, '');
-      const phoneEmail = `${cleanPhone}@7finance.com`;
       
-      let emailToTry = phoneEmail;
-      
-      // First try with phone-based email
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: phoneEmail,
-        password: senha,
-      });
-
-      // If phone-based email didn't work, try the direct email
-      if (authError && authError.message.includes('Invalid')) {
-        const { data: authData2, error: authError2 } = await supabase.auth.signInWithPassword({
-          email: telefone,
-          password: senha,
-        });
-        
-        if (authError2) {
-          console.error('Auth error:', authError2.message);
-          return { 
-            success: false, 
-            error: authError2.message.includes('Invalid') 
-              ? 'Telefone ou senha incorretos' 
-              : authError2.message 
-          };
-        }
-        
-        emailToTry = telefone;
-      } else if (authError) {
-        console.error('Auth error:', authError.message);
-        return { 
-          success: false, 
-          error: authError.message.includes('Invalid') 
-            ? 'Telefone ou senha incorretos' 
-            : authError.message 
-        };
-      }
-
-      // Get user profile from users table
-      const { data: userData, error: userError } = await supabase
+      // 1) Busca o email real do usuário na tabela users pelo telefone
+      const { data: userRow } = await supabase
         .from('users')
-        .select('*')
-        .eq('auth_id', authData.user.id)
+        .select('email, auth_id')
+        .eq('phone', cleanPhone)
         .single();
 
-      if (userError || !userData) {
-        // Create user profile if doesn't exist
-        const { data: newUser, error: createError } = await supabase
-          .from('users')
-          .insert({
-            auth_id: authData.user.id,
-            phone: cleanPhone,
-            name: authData.user.email?.split('@')[0] || 'Usuário',
-          })
-          .select()
-          .single();
-        
-        if (createError) {
-          return { success: false, error: 'Erro ao criar perfil: ' + createError.message };
+      // Lista de emails para tentar autenticar (em ordem de prioridade)
+      const emailsToTry: string[] = [];
+      if (userRow?.email) emailsToTry.push(userRow.email);
+      emailsToTry.push(`${cleanPhone}@7finance.com`);
+      // Remove duplicatas
+      const uniqueEmails = [...new Set(emailsToTry)];
+
+      let lastError: any = null;
+      for (const emailAttempt of uniqueEmails) {
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: emailAttempt,
+          password: senha,
+        });
+
+        if (!authError && authData.user && authData.session) {
+          // Login bem-sucedido — buscar perfil
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('auth_id', authData.user.id)
+            .single();
+
+          if (userError || !userData) {
+            // Cria perfil se não existir
+            const { data: newUser, error: createError } = await supabase
+              .from('users')
+              .insert({
+                auth_id: authData.user.id,
+                phone: cleanPhone,
+                name: authData.user.email?.split('@')[0] || 'Usuário',
+              })
+              .select()
+              .single();
+
+            if (createError) {
+              return { success: false, error: 'Erro ao criar perfil: ' + createError.message };
+            }
+
+            return {
+              success: true,
+              data: {
+                user: adaptUser(newUser),
+                token: authData.session.access_token,
+              },
+            };
+          }
+
+          return {
+            success: true,
+            data: {
+              user: adaptUser(userData),
+              token: authData.session.access_token,
+            },
+          };
         }
-        
-        return {
-          success: true,
-          data: {
-            user: adaptUser(newUser),
-            token: authData.session?.access_token || '',
-          },
-        };
+
+        lastError = authError;
       }
 
+      // Nenhuma tentativa funcionou
+      const msg = lastError?.message || '';
       return {
-        success: true,
-        data: {
-          user: adaptUser(userData),
-          token: authData.session?.access_token || '',
-        },
+        success: false,
+        error: msg.includes('Invalid') ? 'Telefone ou senha incorretos' : (msg || 'Erro no login'),
       };
     } catch (err: any) {
       console.error('Login exception:', err);
