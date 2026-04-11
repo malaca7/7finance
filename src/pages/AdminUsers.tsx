@@ -435,7 +435,7 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                           <code className="text-xs font-mono text-gray-400 bg-premium-black px-2 py-1 rounded min-w-[80px] text-center">
                             {visiblePasswords[user.id] || '••••••••'}
                           </code>
-                          {visiblePasswords[user.id] ? (
+                          {visiblePasswords[user.id] && (
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => setVisiblePasswords(prev => { const n = {...prev}; delete n[user.id]; return n; })}
@@ -477,17 +477,6 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                                 {copiedId === user.id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                               </button>
                             </div>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setUserIdToReset(user.id);
-                                setIsResetModalOpen(true);
-                              }}
-                              className="p-1.5 rounded-lg text-neutral hover:text-primary hover:bg-primary/10 transition-all"
-                              title="Redefinir e visualizar senha"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
                           )}
                         </div>
                       </td>
