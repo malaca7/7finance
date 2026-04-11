@@ -411,7 +411,33 @@ export function ProfilePage() {
                   if (novaSenha !== confirmSenha) return toast.error('As senhas não coincidem');
                   setSenhaLoading(true);
                   try {
-                    const { error } = await (await import('../api/supabase')).supabase.auth.updateUser({ password: novaSenha });
+                    const { supabase } = await import('../api/supabase');
+                    
+                    // Descobrir o email usado no auth (phone@7finance.com ou email real)
+                    const phone = user.telefone || user.phone || '';
+                    const cleanPhone = phone.replace(/\D/g, '');
+                    const phoneEmail = cleanPhone ? `${cleanPhone}@7finance.com` : '';
+                    const realEmail = user.email || '';
+                    
+                    // Tentar reautenticar com senha atual para validar
+                    let reauthed = false;
+                    if (phoneEmail) {
+                      const { error: e1 } = await supabase.auth.signInWithPassword({ email: phoneEmail, password: senhaAtual });
+                      if (!e1) reauthed = true;
+                    }
+                    if (!reauthed && realEmail) {
+                      const { error: e2 } = await supabase.auth.signInWithPassword({ email: realEmail, password: senhaAtual });
+                      if (!e2) reauthed = true;
+                    }
+                    
+                    if (!reauthed) {
+                      toast.error('Senha atual incorreta');
+                      setSenhaLoading(false);
+                      return;
+                    }
+                    
+                    // Agora atualizar a senha
+                    const { error } = await supabase.auth.updateUser({ password: novaSenha });
                     if (error) {
                       toast.error(error.message || 'Erro ao alterar senha');
                     } else {
