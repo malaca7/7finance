@@ -479,17 +479,12 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                             </div>
                           ) : (
                             <button
-                              onClick={async () => {
-                                const res = await usersApi.resetPassword(user.id);
-                                if (res.success && res.data) {
-                                  setVisiblePasswords(prev => ({...prev, [user.id]: res.data!.newPassword}));
-                                  toast.success('Nova senha gerada');
-                                } else {
-                                  toast.error(res.error || 'Erro ao gerar senha');
-                                }
+                              onClick={() => {
+                                setUserIdToReset(user.id);
+                                setIsResetModalOpen(true);
                               }}
                               className="p-1.5 rounded-lg text-neutral hover:text-primary hover:bg-primary/10 transition-all"
-                              title="Gerar e visualizar nova senha"
+                              title="Redefinir e visualizar senha"
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
