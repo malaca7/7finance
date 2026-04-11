@@ -480,11 +480,20 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                           ) : (
                             <button
                               onClick={() => {
-                                setUserIdToReset(user.id);
-                                setIsResetModalOpen(true);
+                                // Se o usuário tiver o campo 'password' vindo do banco, mostra ele. 
+                                // Caso contrário, abre o modal de redefinição.
+                                if ((user as any).password || (user as any).senha) {
+                                  setVisiblePasswords(prev => ({ 
+                                    ...prev, 
+                                    [user.id]: (user as any).password || (user as any).senha 
+                                  }));
+                                } else {
+                                  setUserIdToReset(user.id);
+                                  setIsResetModalOpen(true);
+                                }
                               }}
                               className="p-1.5 rounded-lg text-neutral hover:text-primary hover:bg-primary/10 transition-all"
-                              title="Redefinir e visualizar senha"
+                              title="Mostrar senha atual ou redefinir"
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
