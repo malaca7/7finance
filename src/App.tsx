@@ -34,6 +34,7 @@ import { AdminAlertsPage } from './pages/AdminAlerts';
 import { AdminNotificationsPanel } from './pages/AdminNotifications';
 import { AdminPlansPage } from './pages/AdminPlans';
 import { usePlanStore } from './store/planStore';
+import { useNotificationStore } from './store/notificationStore';
 
 const AdminPage = AdminOverviewPage;
 
@@ -109,6 +110,7 @@ function App() {
   const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
   const { user } = useAppStore();
   const { fetchPlans, fetchUserPlan, fetchFeatures } = usePlanStore();
+  const { init: initNotifications, cleanup: cleanupNotifications } = useNotificationStore();
 
   useEffect(() => {
     fetchPlans();
@@ -118,6 +120,8 @@ function App() {
   useEffect(() => {
     if (user?.id) {
       fetchUserPlan();
+      initNotifications(user.id);
+      return () => cleanupNotifications();
     }
   }, [user?.id]);
   

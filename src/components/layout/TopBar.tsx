@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Sun, Moon, Maximize, Minimize, ChevronDown, User, LogOut, Shield, LayoutDashboard, Users, BarChart3, FileText, AlertTriangle, Send, Crown } from 'lucide-react';
+import { Sun, Moon, Maximize, Minimize, ChevronDown, User, LogOut, Shield, LayoutDashboard, Users, BarChart3, FileText, AlertTriangle, Send, Crown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store';
 import { usePlanStore } from '../../store/planStore';
+import { useNotificationStore } from '../../store/notificationStore';
+import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { useTheme } from '../ThemeContext';
 import { clsx } from 'clsx';
 
@@ -131,9 +133,7 @@ export function TopBar() {
         </button>
 
         {/* Notifications */}
-        <button className="relative p-2 rounded-xl hover:bg-white/5 transition-all duration-200 text-neutral hover:text-white">
-          <Bell className="w-5 h-5" />
-        </button>
+        <NotificationDropdown />
 
         {/* Divider */}
         <div className="w-px h-6 bg-white/10 mx-1" />
