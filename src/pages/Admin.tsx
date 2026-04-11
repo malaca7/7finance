@@ -221,11 +221,11 @@ export function AdminPage() {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleExport('csv')}>
+            <Button variant="primary" size="sm" onClick={() => handleExport('csv')}>
               <Download className="w-4 h-4 mr-2" />
               Exportar
             </Button>
-            <Button size="sm" onClick={() => openUserModal()}>
+            <Button variant="primary" size="sm" onClick={() => openUserModal()}>
               <Plus className="w-4 h-4 mr-2" />
               Novo Usuário
             </Button>
@@ -242,19 +242,21 @@ export function AdminPage() {
               { id: 'logs', label: 'Auditoria', icon: History },
               { id: 'alerts', label: 'Alertas', icon: Zap },
             ].map((tab) => (
-              <button
+              <Button
                 key={tab.id}
+                variant={activeTab === tab.id ? "primary" : "secondary"}
+                size="sm"
                 onClick={() => setActiveTab(tab.id as any)}
                 className={clsx(
                   "flex items-center gap-1.5 px-3 py-2 rounded-app text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
                   activeTab === tab.id 
-                    ? "bg-gradient-to-r from-primary via-accent to-primary text-premium-black shadow-[0_0_16px_0_rgba(57,255,20,0.25)]" 
-                    : "text-gray-400 hover:text-white hover:bg-premium-gray/50"
+                    ? "shadow-[0_0_16px_0_rgba(57,255,20,0.25)]" 
+                    : ""
                 )}
               >
                 <tab.icon className="w-4 h-4" />
                 <span className="hidden sm:inline">{tab.label}</span>
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -370,12 +372,12 @@ export function AdminPage() {
                 <Card>
                   <h4 className="text-white font-bold mb-4">Ações Rápidas</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    <button className="p-3 bg-premium-gray/30 hover:bg-premium-gold/20 text-gray-300 hover:text-premium-gold rounded-lg transition-all text-xs flex flex-col items-center gap-2">
+                    <Button variant="primary" className="p-3 text-xs flex flex-col items-center gap-2">
                       <Download className="w-4 h-4" /> Relatório Geral
-                    </button>
-                    <button className="p-3 bg-premium-gray/30 hover:bg-premium-gold/20 text-gray-300 hover:text-premium-gold rounded-lg transition-all text-xs flex flex-col items-center gap-2">
+                    </Button>
+                    <Button variant="primary" className="p-3 text-xs flex flex-col items-center gap-2">
                       <Shield className="w-4 h-4" /> Auditoria
-                    </button>
+                    </Button>
                   </div>
                 </Card>
               </div>
@@ -403,9 +405,9 @@ export function AdminPage() {
                         </div>
                         <p className="text-xs text-gray-400 mt-1">{alert.mensagem}</p>
                       </div>
-                      <button className="opacity-0 group-hover:opacity-100 p-2 bg-premium-gold text-premium-black rounded-lg transition-all text-[10px] font-bold">
+                      <Button className="opacity-0 group-hover:opacity-100 p-2 text-[10px] font-bold" variant="primary">
                         AGIR
-                      </button>
+                      </Button>
                     </div>
                   ))
                 )}
@@ -853,8 +855,8 @@ export function AdminPage() {
            )}
 
            <div className="flex gap-2 pt-4">
-              <Button variant="secondary" className="flex-1" onClick={() => setIsUserModalOpen(false)}>Cancelar</Button>
-              <Button className="flex-1" onClick={handleSaveUser} disabled={isSaving}>
+              <Button variant="primary" className="flex-1" onClick={() => setIsUserModalOpen(false)}>Cancelar</Button>
+              <Button variant="primary" className="flex-1" onClick={handleSaveUser} disabled={isSaving}>
                 {isSaving ? 'Salvando...' : selectedUser ? "Salvar Alterações" : "Criar Usuário"}
               </Button>
            </div>
