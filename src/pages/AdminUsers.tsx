@@ -602,7 +602,10 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                 {isSaving ? 'Salvando...' : selectedUser ? "Salvar Alterações" : "Criar Usuário"}
               </Button>
             </div>
-          </div>Type Selection Modal */}
+          </div>
+        </Modal>
+
+        {/* Password Reset Type Selection Modal */}
         <Modal
           isOpen={isResetModalOpen}
           onClose={() => setIsResetModalOpen(false)}
