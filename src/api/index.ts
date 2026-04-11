@@ -268,6 +268,7 @@ export const usersApi = {
     if (updateData.status !== undefined) mapped.is_active = updateData.status === 'ativo';
     if (updateData.bio !== undefined) mapped.bio = updateData.bio;
     if (updateData.username !== undefined) mapped.username = updateData.username;
+    if (updateData.userlink !== undefined) mapped.userlink = updateData.userlink;
     // Campos que já são do banco passam direto
     if (updateData.name !== undefined) mapped.name = updateData.name;
     if (updateData.phone !== undefined) mapped.phone = updateData.phone;

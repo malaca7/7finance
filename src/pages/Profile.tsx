@@ -74,8 +74,9 @@ export function ProfilePage() {
 
   // Public profile state
   const [publicUsername, setPublicUsername] = useState('');
+  const [publicUserlink, setPublicUserlink] = useState('');
   const [publicBio, setPublicBio] = useState('');
-  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [userlinkStatus, setUserlinkStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
   const [savingPublicProfile, setSavingPublicProfile] = useState(false);
 
   useEffect(() => {
@@ -88,8 +89,9 @@ export function ProfilePage() {
         foto_url: user.foto_url || user.avatar_url || '',
       });
       setPublicUsername(user.username || '');
+      setPublicUserlink(user.userlink || '');
       setPublicBio(user.bio || '');
-      if (user.username) setUsernameStatus('available');
+      if (user.userlink) setUserlinkStatus('available');
       fetchVeiculos();
     }
   }, [user]);
@@ -240,47 +242,47 @@ export function ProfilePage() {
     }
   };
 
-  // Username validation (lowercase, alphanumeric, dot, underscore, 3-30 chars)
-  const validateUsername = (value: string) => {
+  // Userlink validation (letters and numbers only, unique)
+  const validateUserlink = (value: string) => {
     if (!value) return 'idle' as const;
     if (!/^[a-zA-Z0-9]+$/.test(value)) return 'invalid' as const;
     return 'checking' as const;
   };
 
-  const handleUsernameChange = async (value: string) => {
+  const handleUserlinkChange = async (value: string) => {
     const cleaned = value.replace(/[^a-zA-Z0-9]/g, '');
-    setPublicUsername(cleaned);
+    setPublicUserlink(cleaned);
 
-    const status = validateUsername(cleaned);
+    const status = validateUserlink(cleaned);
     if (status !== 'checking') {
-      setUsernameStatus(status);
+      setUserlinkStatus(status);
       return;
     }
 
-    // If it's the same as current username, it's available
-    if (cleaned === (user?.username || '')) {
-      setUsernameStatus('available');
+    // If it's the same as current userlink, it's available
+    if (cleaned === (user?.userlink || '')) {
+      setUserlinkStatus('available');
       return;
     }
 
-    setUsernameStatus('checking');
+    setUserlinkStatus('checking');
     const { data, error } = await supabase
       .from('users')
       .select('id')
-      .eq('username', cleaned)
+      .eq('userlink', cleaned)
       .maybeSingle();
 
     if (error) {
-      setUsernameStatus('idle');
+      setUserlinkStatus('idle');
       return;
     }
-    setUsernameStatus(data ? 'taken' : 'available');
+    setUserlinkStatus(data ? 'taken' : 'available');
   };
 
   const handleSavePublicProfile = async () => {
     if (!user) return;
-    if (publicUsername && usernameStatus !== 'available') {
-      toast.error('Escolha um nome de usuário válido e disponível');
+    if (publicUserlink && userlinkStatus !== 'available') {
+      toast.error('Escolha um link válido e disponível');
       return;
     }
 
@@ -288,6 +290,7 @@ export function ProfilePage() {
     try {
       const response = await usersApi.update(user.id, {
         username: publicUsername || null,
+        userlink: publicUserlink || null,
         bio: publicBio || null,
       });
 
@@ -451,34 +454,48 @@ export function ProfilePage() {
           </div>
 
           <div className="space-y-5">
-            {/* Username / Link */}
+            {/* Username (display name) */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
                 <AtSign className="w-3 h-3" /> Nome de Usuário
               </label>
+              <Input
+                value={publicUsername}
+                onChange={(e) => setPublicUsername(e.target.value)}
+                placeholder="Seu nome de exibição"
+                maxLength={50}
+              />
+              <p className="text-xs text-neutral">Aparece no seu perfil público</p>
+            </div>
+
+            {/* Userlink (unique link) */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
+                <LinkIcon className="w-3 h-3" /> Link do Perfil
+              </label>
               <div className="relative">
                 <Input
-                  value={publicUsername}
-                  onChange={(e) => handleUsernameChange(e.target.value)}
-                  placeholder="seuusuario"
+                  value={publicUserlink}
+                  onChange={(e) => handleUserlinkChange(e.target.value)}
+                  placeholder="seulink"
                   maxLength={30}
                 />
-                {usernameStatus === 'checking' && (
+                {userlinkStatus === 'checking' && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   </div>
                 )}
-                {usernameStatus === 'available' && publicUsername && (
+                {userlinkStatus === 'available' && publicUserlink && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <Check className="w-4 h-4 text-green-400" />
                   </div>
                 )}
-                {usernameStatus === 'taken' && (
+                {userlinkStatus === 'taken' && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <AlertCircle className="w-4 h-4 text-red-400" />
                   </div>
                 )}
-                {usernameStatus === 'invalid' && publicUsername && (
+                {userlinkStatus === 'invalid' && publicUserlink && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <AlertCircle className="w-4 h-4 text-amber-400" />
                   </div>
@@ -486,25 +503,25 @@ export function ProfilePage() {
               </div>
 
               {/* Status messages */}
-              {usernameStatus === 'taken' && (
-                <p className="text-xs text-red-400">Este nome já está em uso</p>
+              {userlinkStatus === 'taken' && (
+                <p className="text-xs text-red-400">Este link já está em uso</p>
               )}
-              {usernameStatus === 'invalid' && publicUsername && (
+              {userlinkStatus === 'invalid' && publicUserlink && (
                 <p className="text-xs text-amber-400">
                   Use apenas letras e números, sem espaços ou caracteres especiais.
                 </p>
               )}
-              {usernameStatus === 'available' && publicUsername && (
+              {userlinkStatus === 'available' && publicUserlink && (
                 <p className="text-xs text-green-400">Disponível!</p>
               )}
 
               {/* Preview Link */}
-              {publicUsername && usernameStatus === 'available' && (
+              {publicUserlink && userlinkStatus === 'available' && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg">
                   <LinkIcon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                   <span className="text-xs text-neutral">Seu link:</span>
                   <span className="text-xs text-primary font-medium truncate">
-                    {window.location.origin}/perfil/{publicUsername}
+                    {window.location.origin}/perfil/{publicUserlink}
                   </span>
                 </div>
               )}
@@ -528,9 +545,9 @@ export function ProfilePage() {
 
             {/* Preview + Save */}
             <div className="flex items-center justify-between gap-3 pt-2">
-              {publicUsername && usernameStatus === 'available' ? (
+              {publicUserlink && userlinkStatus === 'available' ? (
                 <Link
-                  to={`/perfil/${publicUsername}`}
+                  to={`/perfil/${publicUserlink}`}
                   className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />

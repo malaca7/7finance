@@ -1,18 +1,21 @@
 -- ============================================
--- ADD bio, username columns to public.users
+-- ADD bio, username, userlink columns to public.users
 -- 7Finance - Migration
 -- ============================================
 
 -- Adicionar coluna bio (texto livre)
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS bio TEXT;
 
--- Adicionar coluna username (único, para URL de perfil público)
+-- Adicionar coluna username (nome de exibição, livre)
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS username TEXT;
 
--- Username deve ser único (quando preenchido)
-CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username 
-  ON public.users(username) WHERE username IS NOT NULL;
+-- Adicionar coluna userlink (link único do perfil público)
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS userlink TEXT;
 
--- Índice para buscar por username
-CREATE INDEX IF NOT EXISTS idx_users_username_lower 
-  ON public.users(LOWER(username));
+-- Userlink deve ser único (quando preenchido)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_userlink 
+  ON public.users(userlink) WHERE userlink IS NOT NULL;
+
+-- Índice para buscar por userlink (case-insensitive)
+CREATE INDEX IF NOT EXISTS idx_users_userlink_lower 
+  ON public.users(LOWER(userlink));

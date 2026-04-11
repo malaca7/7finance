@@ -183,11 +183,11 @@ export const followsApi = {
     };
   },
 
-  async getUserProfileByUsername(username: string): Promise<ApiResponse<{ user: User; counts: FollowCounts; isFollowing: boolean }>> {
+  async getUserProfileByUsername(userlink: string): Promise<ApiResponse<{ user: User; counts: FollowCounts; isFollowing: boolean }>> {
     const { data: userData, error } = await supabase
       .from('users')
       .select('*')
-      .eq('username', username)
+      .eq('userlink', userlink)
       .single();
 
     if (error || !userData) return { success: false, error: 'Usuário não encontrado' };

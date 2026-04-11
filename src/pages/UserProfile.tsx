@@ -86,8 +86,8 @@ export function UserProfilePage() {
   }, [followers, followingMap, resolvedUserId, isMe]);
 
   const copyProfileLink = () => {
-    const profileUrl = profileUser?.username
-      ? `${window.location.origin}/perfil/${profileUser.username}`
+    const profileUrl = profileUser?.userlink
+      ? `${window.location.origin}/perfil/${profileUser.userlink}`
       : window.location.href;
     navigator.clipboard.writeText(profileUrl);
     setCopied(true);
