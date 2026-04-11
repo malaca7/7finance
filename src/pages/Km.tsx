@@ -275,23 +275,23 @@ export function KmPage() {
   const getKmTotal = (k: { km_inicial?: number | null; km_final?: number | null }): number => {
     const ini = Number(k.km_inicial) || 0;
     const fim = Number(k.km_final) || 0;
-    return fim > ini ? fim - ini : 0;
+    return fim > ini ? (fim - ini) : 0;
   };
 
-  // Calculate totals
-  const totalKm = kmRegistries.reduce((sum, k) => sum + getKmTotal(k), 0);
-  const registriesWithKm = kmRegistries.filter(k => getKmTotal(k) > 0);
+  // Calculate totals - USA FILTRADOS
+  const totalKm = filteredKmRegistries.reduce((sum, k) => sum + getKmTotal(k), 0);
+  const registriesWithKm = filteredKmRegistries.filter(k => getKmTotal(k) > 0);
   const avgKmPerDay = registriesWithKm.length > 0 
     ? Math.round(totalKm / registriesWithKm.length) 
     : 0;
   
-  // Current KM (latest km_final, or km_inicial if km_final not yet filled)
-  const currentKm = kmRegistries.length > 0 
-    ? (Number(kmRegistries[0].km_final) || Number(kmRegistries[0].km_inicial) || 0)
+  // Current KM (latest km_final, or km_inicial if km_final not yet filled) - USA FILTRADOS
+  const currentKm = filteredKmRegistries.length > 0 
+    ? (Number(filteredKmRegistries[0].km_final) || Number(filteredKmRegistries[0].km_inicial) || 0)
     : 0;
 
-  // Get last 7 days for chart
-  const last7Days = kmRegistries.filter(k => getKmTotal(k) > 0).slice(0, 7).reverse();
+  // Get last 7 days for chart - USA FILTRADOS
+  const last7Days = filteredKmRegistries.filter(k => getKmTotal(k) > 0).slice(0, 7).reverse();
   const chartData = last7Days.map(k => ({
     date: displayLocaleDatetime(k.data),
     km: getKmTotal(k),
