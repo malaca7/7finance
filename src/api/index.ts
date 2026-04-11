@@ -245,7 +245,10 @@ export const authApi = {
 
 export const usersApi = {
   async getAll() { 
-    const { data, error } = await supabase.from('users').select('*');
+    // Usa service-role para bypassing RLS (chamado apenas de páginas admin)
+    const { createAdminClient } = await import('./supabase');
+    const adminClient = await createAdminClient();
+    const { data, error } = await adminClient.from('users').select('*');
     if (error) return apiResponse<User[]>(null, error);
     return { success: true, data: (data || []).map(adaptUser) };
   },
@@ -263,6 +266,8 @@ export const usersApi = {
     if (updateData.foto_url !== undefined) mapped.avatar_url = updateData.foto_url;
     if (updateData.role !== undefined) mapped.role = updateData.role;
     if (updateData.status !== undefined) mapped.is_active = updateData.status === 'ativo';
+    if (updateData.bio !== undefined) mapped.bio = updateData.bio;
+    if (updateData.username !== undefined) mapped.username = updateData.username;
     // Campos que já são do banco passam direto
     if (updateData.name !== undefined) mapped.name = updateData.name;
     if (updateData.phone !== undefined) mapped.phone = updateData.phone;

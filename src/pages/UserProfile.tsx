@@ -31,7 +31,7 @@ import { clsx } from 'clsx';
 type ProfileTab = 'about' | 'activity';
 
 export function UserProfilePage() {
-  const { userId } = useParams<{ userId: string }>();
+  const { userId, username: routeUsername } = useParams<{ userId?: string; username?: string }>();
   const navigate = useNavigate();
   const { user: me } = useAppStore();
   const { planName } = usePlanAccess();
@@ -42,39 +42,54 @@ export function UserProfilePage() {
   const [tab, setTab] = useState<ProfileTab>('about');
   const [copied, setCopied] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(userId || null);
 
-  const isMe = userId === me?.id;
+  const isMe = resolvedUserId === me?.id;
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId && !routeUsername) return;
     loadProfile();
-  }, [userId]);
+  }, [userId, routeUsername]);
 
   const loadProfile = async () => {
-    if (!userId) return;
     setLoading(true);
-    const res = await followsApi.getUserProfile(userId);
+    let res;
+    if (routeUsername) {
+      // Load by username (/perfil/:username)
+      res = await followsApi.getUserProfileByUsername(routeUsername);
+    } else if (userId) {
+      // Load by ID (/user/:userId)
+      res = await followsApi.getUserProfile(userId);
+    } else {
+      setLoading(false);
+      return;
+    }
+
     if (res.success && res.data) {
       setProfileUser(res.data.user);
       setProfileCounts(res.data.counts);
-      if (!isMe) await checkIsFollowing(userId);
-      // Pre-fetch followers for mutual friends check
-      await fetchFollowers(userId);
+      const uid = res.data.user.id;
+      setResolvedUserId(uid);
+      if (uid !== me?.id) await checkIsFollowing(uid);
+      await fetchFollowers(uid);
     }
     setLoading(false);
   };
 
   // Mutual followers (people I follow that also follow this user)
   const mutualFollowers = useMemo(() => {
-    if (isMe || !userId) return [];
-    const userFollowers = followers[userId] || [];
+    if (isMe || !resolvedUserId) return [];
+    const userFollowers = followers[resolvedUserId] || [];
     return userFollowers
       .filter((f) => f.user?.id && followingMap[f.user.id])
       .slice(0, 3);
-  }, [followers, followingMap, userId, isMe]);
+  }, [followers, followingMap, resolvedUserId, isMe]);
 
   const copyProfileLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const profileUrl = profileUser?.username
+      ? `${window.location.origin}/perfil/${profileUser.username}`
+      : window.location.href;
+    navigator.clipboard.writeText(profileUrl);
     setCopied(true);
     toast.success('Link copiado!');
     setTimeout(() => setCopied(false), 2000);
@@ -120,7 +135,7 @@ export function UserProfilePage() {
     ? new Date(profileUser.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
     : null;
   const roleBadge = profileUser.role === 'admin' ? 'Administrador' : 'Motorista';
-  const isFollowing = followingMap[userId!] ?? false;
+  const isFollowing = followingMap[resolvedUserId!] ?? false;
 
   return (
     <MainLayout>
@@ -219,7 +234,7 @@ export function UserProfilePage() {
                     >
                       <MessageCircle className="w-4 h-4" />
                     </button>
-                    <FollowButton targetUserId={userId!} />
+                    <FollowButton targetUserId={resolvedUserId!} />
                   </>
                 )}
               </div>
@@ -261,7 +276,7 @@ export function UserProfilePage() {
               {/* Follow Counts - inline style */}
               <div className="flex items-center gap-4 pt-1">
                 <button
-                  onClick={() => navigate(`/user/${userId}/follows?tab=following`)}
+                  onClick={() => navigate(`/user/${resolvedUserId}/follows?tab=following`)}
                   className="group text-sm"
                 >
                   <span className="font-bold text-white group-hover:text-primary transition-colors">
@@ -270,7 +285,7 @@ export function UserProfilePage() {
                   <span className="text-neutral group-hover:text-neutral/80">seguindo</span>
                 </button>
                 <button
-                  onClick={() => navigate(`/user/${userId}/follows?tab=followers`)}
+                  onClick={() => navigate(`/user/${resolvedUserId}/follows?tab=followers`)}
                   className="group text-sm"
                 >
                   <span className="font-bold text-white group-hover:text-primary transition-colors">
