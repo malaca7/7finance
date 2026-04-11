@@ -75,7 +75,7 @@ export function EarningsPage() {
       setTipo(earning.tipo);
       setValor(earning.valor.toString());
       setDescricao(earning.descricao || '');
-      setData(earning.data);
+      setData(getLocalDatetimeForInput(earning.data));
     } else {
       setSelectedEarning(null);
       setTipo('corrida');

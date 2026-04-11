@@ -77,7 +77,7 @@ export function ExpensesPage() {
       setTipo(expense.tipo);
       setValor(expense.valor.toString());
       setDescricao(expense.descricao || '');
-      setData(expense.data);
+      setData(getLocalDatetimeForInput(expense.data));
     } else {
       setSelectedExpense(null);
       setTipo('abastecimento');

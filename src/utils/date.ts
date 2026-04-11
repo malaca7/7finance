@@ -1,5 +1,20 @@
 export function getLocalDatetimeForInput(val?: string | null): string {
-  const d = val ? new Date(val) : new Date();
+  if (!val) {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+  // Se já for uma data de input (YYYY-MM-DDTHH:mm), retorna como está
+  if (val.includes('T') && val.length >= 16 && !val.endsWith('Z')) {
+    return val.substring(0, 16);
+  }
+
+  const d = parseLocalDate(val);
   if (isNaN(d.getTime())) return '';
   
   const year = d.getFullYear();
