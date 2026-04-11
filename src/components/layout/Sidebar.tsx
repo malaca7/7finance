@@ -24,7 +24,11 @@ const personalMenuItems = [
   { path: '/perfil', label: 'Perfil', icon: UserIcon },
 ];
 const adminMenuItems = [
-  { path: '/admin', label: 'Admin', icon: Users },
+  { path: '/admin', label: 'Geral', icon: Activity },
+  { path: '/admin/users', label: 'Usuários', icon: Users },
+  { path: '/admin/analytics', label: 'Financeiro', icon: DollarSign },
+  { path: '/admin/logs', label: 'Auditoria', icon: History },
+  { path: '/admin/alerts', label: 'Alertas', icon: Zap },
 ];
 
 export function Sidebar() {
@@ -34,6 +38,8 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
+
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     const handler = (e: any) => {
@@ -63,7 +69,7 @@ export function Sidebar() {
       <aside
         className={clsx(
           "hidden lg:flex fixed top-0 left-0 h-screen bg-premium-dark border-r border-white/5 flex-col z-40 transition-all duration-300 ease-in-out shrink-0",
-          isCollapsed ? "w-20" : "w-64"
+          isCollapsed ? "w-24" : "w-72"
         )}
       >
         <button

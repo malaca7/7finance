@@ -1,0 +1,495 @@
+import { useEffect, useState, useMemo } from 'react';
+import { 
+  Users, Search, Plus, Edit2, Trash2, Activity, DollarSign, History, Zap
+} from 'lucide-react';
+import { Key } from 'lucide-react';
+import { Card, CardHeader, Button, Input, Select, Modal, ConfirmModal } from '../components/ui';
+import { MainLayout } from '../components/layout/MainLayout';
+import { useAppStore } from '../store';
+import { usersApi, adminApi, logsApi } from '../api';
+import type { User, UserRole, UserStatus } from '../types';
+import { clsx } from 'clsx';
+import toast from 'react-hot-toast';
+import { Link, useLocation } from 'react-router-dom';
+
+const roleOptions = [
+  { value: 'user', label: 'Usuário' },
+  { value: 'admin', label: 'Administrador' },
+];
+
+const statusOptions = [
+  { value: 'ativo', label: 'Ativo' },
+  { value: 'inativo', label: 'Inativo' },
+  { value: 'bloqueado', label: 'Bloqueado' },
+  { value: 'problema_financeiro', label: 'Problema Financeiro' },
+];
+
+export function AdminUsersPage() {
+  const { allUsers, setAllUsers } = useAppStore();
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRole, setFilterRole] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+
+const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [generatedPassword, setGeneratedPassword] = useState<{ password: string; email: string; name: string } | null>(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  const [formNome, setFormNome] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [formTelefone, setFormTelefone] = useState('');
+  const [formStatus, setFormStatus] = useState<UserStatus>('ativo');
+  const [formRole, setFormRole] = useState<UserRole>('user');
+  const [formPassword, setFormPassword] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    setIsLoading(true);
+    try {
+      const res = await usersApi.getAll();
+      if (res.success) setAllUsers((res.data as User[]) || []);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredUsers = useMemo(() => {
+    return allUsers.filter(user => {
+      const matchesSearch = 
+        ((user.nome || user.name) || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ((user.telefone || user.phone) || '').includes(searchTerm);
+      
+      const matchesRole = filterRole === 'all' || user.role === filterRole;
+      const matchesStatus = filterStatus === 'all' || (user.status || (user.is_active === false ? 'inativo' : 'ativo')) === filterStatus;
+
+      return matchesSearch && matchesRole && matchesStatus;
+    });
+  }, [allUsers, searchTerm, filterRole, filterStatus]);
+
+  const openUserModal = (user?: User) => {
+    if (user) {
+      setSelectedUser(user);
+      setFormNome(user.nome || user.name || '');
+      setFormEmail(user.email || '');
+      setFormTelefone(user.telefone || user.phone || '');
+      setFormStatus((user.status || (user.is_active === false ? 'inativo' : 'ativo')) as UserStatus);
+      setFormRole(user.role as UserRole);
+      setFormPassword('');
+    } else {
+      setSelectedUser(null);
+      setFormNome('');
+      setFormEmail('');
+      setFormTelefone('');
+      setFormStatus('ativo');
+      setFormRole('user');
+      setFormPassword('');
+    }
+    setIsUserModalOpen(true);
+  };
+
+  const handleSaveUser = async () => {
+    if (!formNome.trim()) {
+      toast.error('Nome é obrigatório');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      let res;
+      if (selectedUser) {
+        const userData: any = {
+          nome: formNome,
+          email: formEmail || undefined,
+          telefone: formTelefone || undefined,
+          status: formStatus,
+          role: formRole,
+        };
+        res = await usersApi.update(selectedUser.id, userData);
+        if (res.success) {
+          await logsApi.create('EDITAR_USUARIO', `Editou usuário "${formNome}" (${selectedUser.id})`);
+          toast.success('Usuário atualizado com sucesso!');
+        }
+      } else {
+        if (!formTelefone.trim() && !formEmail.trim()) {
+          toast.error('Informe email ou telefone');
+          setIsSaving(false);
+          return;
+        }
+        if (!formPassword.trim()) {
+          toast.error('Senha é obrigatória para novos usuários');
+          setIsSaving(false);
+          return;
+        }
+
+        res = await adminApi.createUser({
+          name: formNome,
+          email: formEmail || undefined,
+          phone: formTelefone || undefined,
+          password: formPassword,
+          role: formRole,
+        });
+        if (res.success) {
+          if (formStatus !== 'ativo' && res.data?.user_id) {
+            await usersApi.update(res.data.user_id, { status: formStatus });
+          }
+          await logsApi.create('CRIAR_USUARIO', `Criou usuário "${formNome}" (${res.data?.email || formEmail})`);
+          toast.success('Usuário criado com sucesso!');
+        }
+      }
+      
+      if (res?.success) {
+        setIsUserModalOpen(false);
+        loadUsers();
+      } else {
+        toast.error(res?.error || 'Erro ao salvar usuário');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro inesperado');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!userToDelete) return;
+    
+    const deletedUser = allUsers.find(u => u.id === userToDelete);
+    const res = await usersApi.delete(userToDelete);
+    if (res.success !== false) {
+      await logsApi.create('EXCLUIR_USUARIO', `Excluiu usuário "${deletedUser?.nome || deletedUser?.name || userToDelete}"`);
+      toast.success('Usuário excluído com sucesso');
+      loadUsers();
+    } else {
+      toast.error('Erro ao excluir usuário');
+    }
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleResetPassword = async (userId: string) => {
+    setIsResettingPassword(true);
+    try {
+      const res = await usersApi.resetPassword(userId);
+      if (res.success && res.data) {
+        setGeneratedPassword({
+          password: res.data.newPassword,
+          email: res.data.email,
+          name: res.data.name
+        });
+        await logsApi.create('REDEFINIR_SENHA', `Redefiniu senha do usuário ID ${userId}`);
+        toast.success('Senha redefinida! Copie e envie ao usuário.');
+      } else {
+        toast.error(res.error || 'Erro ao redefinir senha');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro inesperado');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const getStatusColor = (status?: UserStatus) => {
+    switch (status || 'ativo') {
+      case 'ativo': return 'text-green-500 bg-green-500/10';
+      case 'inativo': return 'text-gray-400 bg-gray-500/10';
+      case 'bloqueado': return 'text-red-500 bg-red-500/10';
+      case 'problema_financeiro': return 'text-orange-500 bg-orange-500/10';
+      default: return 'text-gray-400 bg-gray-500/10';
+    }
+  };
+
+  return (
+    <MainLayout>
+      <div className="space-y-6 pb-24 lg:pb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white tracking-tight">Usuários</h1>
+            <p className="text-gray-400 text-sm">Gerencie todos os usuários da plataforma</p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button variant="primary" size="sm" onClick={() => openUserModal()}>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Usuário
+            </Button>
+          </div>
+        </div>
+
+        {/* Admin Navigation Tabs */}
+        <div className="overflow-x-auto -mx-4 px-4 scrollbar-hide">
+          <div className="flex items-center gap-1 bg-premium-dark p-1 rounded-app w-fit border border-premium-gray/30">
+            {[
+              { id: 'overview', label: 'Geral', icon: Activity, path: '/admin' },
+              { id: 'users', label: 'Usuários', icon: Users, path: '/admin/users' },
+              { id: 'analytics', label: 'Financeiro', icon: DollarSign, path: '/admin/analytics' },
+              { id: 'logs', label: 'Auditoria', icon: History, path: '/admin/logs' },
+              { id: 'alerts', label: 'Alertas', icon: Zap, path: '/admin/alerts' },
+            ].map((tab) => {
+              const isActive = location.pathname === tab.path;
+              return (
+                <Link
+                  key={tab.id}
+                  to={tab.path}
+                  className={clsx(
+                    "flex items-center gap-1.5 px-3 py-2 rounded-app text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
+                    isActive
+                      ? "bg-primary text-black shadow-glow-green"
+                      : "text-neutral hover:bg-premium-gray/50 hover:text-white"
+                  )}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        <Card className="!p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input 
+                type="text"
+                placeholder="Buscar por nome, email ou telefone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-premium-black border border-premium-gray/50 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:ring-1 focus:ring-premium-gold transition-all"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Select 
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+                options={[{ value: 'all', label: 'Todos Perfis' }, ...roleOptions]}
+                className="!w-40"
+              />
+              <Select 
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                options={[{ value: 'all', label: 'Todos Status' }, ...statusOptions]}
+                className="!w-40"
+              />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="!p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-premium-dark border-b border-premium-gray/30">
+                  <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Usuário</th>
+                  <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Telefone</th>
+                  <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Perfil</th>
+                  <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                  <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Cadastro</th>
+                  <th className="text-right p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-premium-gray/20">
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-gray-500">Nenhum usuário encontrado</td>
+                  </tr>
+                ) : (
+                  filteredUsers.map(user => (
+                    <tr key={user.id} className="hover:bg-premium-gray/10 transition-colors">
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 via-accent/10 to-primary/10 border border-primary/30 flex items-center justify-center text-primary font-bold shadow-[0_0_8px_#39FF14]">
+                            {(user.nome || user.name || 'U').charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-white">{user.nome || user.name || 'Sem nome'}</p>
+                            <p className="text-xs text-gray-500">{user.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <p className="text-sm text-gray-300">{user.telefone || user.phone || '-'}</p>
+                      </td>
+                      <td className="p-4">
+                        <span className={clsx(
+                          "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                          user.role === 'admin' ? "bg-gradient-to-r from-primary/20 via-accent/10 to-primary/10 text-primary" : "bg-blue-500/20 text-blue-400"
+                        )}>
+                          {user.role === 'admin' ? 'Admin' : 'Usuário'}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className={clsx(
+                          "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                          getStatusColor((user.status || (user.is_active === false ? 'inativo' : 'ativo')) as UserStatus)
+                        )}>
+                          {(user.status || (user.is_active === false ? 'inativo' : 'ativo')).replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <p className="text-xs text-gray-500">{user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '-'}</p>
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            onClick={() => handleResetPassword(user.id)}
+                            variant="secondary"
+                            size="sm"
+                            className="p-2 rounded-lg transition-all"
+                            title="Redefinir Senha"
+                            disabled={isResettingPassword}
+                          >
+                            <Key className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            onClick={() => openUserModal(user)}
+                            variant="primary"
+                            size="sm"
+                            className="p-2 rounded-lg transition-all"
+                            title="Editar"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            onClick={() => { setUserToDelete(user.id); setIsDeleteModalOpen(true); }}
+                            variant="danger"
+                            size="sm"
+                            className="p-2 rounded-lg transition-all"
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="p-4 border-t border-premium-gray/30 flex items-center justify-between bg-premium-dark/50">
+            <span className="text-xs text-gray-500">Mostrando {filteredUsers.length} de {allUsers.length} usuários</span>
+          </div>
+        </Card>
+
+        <Modal 
+          isOpen={isUserModalOpen} 
+          onClose={() => setIsUserModalOpen(false)} 
+          title={selectedUser ? "Editar Usuário" : "Criar Novo Usuário"}
+        >
+          <div className="space-y-4">
+            <Input 
+              label="Nome Completo" 
+              placeholder="Nome do motorista" 
+              value={formNome} 
+              onChange={(e) => setFormNome(e.target.value)} 
+            />
+            <Input 
+              label="Telefone" 
+              placeholder="81996138924" 
+              value={formTelefone} 
+              onChange={(e) => setFormTelefone(e.target.value)} 
+            />
+            <Input 
+              label="Email (opcional)" 
+              placeholder="exemplo@email.com" 
+              value={formEmail} 
+              onChange={(e) => setFormEmail(e.target.value)} 
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <Select 
+                label="Status" 
+                options={statusOptions} 
+                value={formStatus} 
+                onChange={(e) => setFormStatus(e.target.value as UserStatus)} 
+              />
+              <Select 
+                label="Perfil de Acesso" 
+                options={roleOptions} 
+                value={formRole} 
+                onChange={(e) => setFormRole(e.target.value as UserRole)} 
+              />
+            </div>
+            
+            {!selectedUser ? (
+              <Input 
+                label="Senha Inicial" 
+                type="password"
+                placeholder="Mínimo 6 caracteres" 
+                value={formPassword} 
+                onChange={(e) => setFormPassword(e.target.value)} 
+              />
+            ) : null}
+
+            <div className="flex gap-2 pt-4">
+              <Button variant="primary" className="flex-1" onClick={() => setIsUserModalOpen(false)}>Cancelar</Button>
+              <Button variant="primary" className="flex-1" onClick={handleSaveUser} disabled={isSaving}>
+                {isSaving ? 'Salvando...' : selectedUser ? "Salvar Alterações" : "Criar Usuário"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Password Reset Modal */}
+        {generatedPassword && (
+          <Modal
+            isOpen={!!generatedPassword}
+            onClose={() => setGeneratedPassword(null)}
+            title="Senha Redefinida"
+            size="md"
+          >
+            <div className="space-y-4">
+              <div className="p-4 bg-primary/10 border border-primary/30 rounded-2xl">
+                <p className="text-sm text-primary font-medium mb-2">
+                  Nova senha gerada com sucesso!
+                </p>
+                <p className="text-xs text-neutral mb-3">
+                  Copie e envie esta senha ao usuário via WhatsApp ou outro meio.
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-lg font-mono text-white bg-premium-black p-3 rounded-lg text-center select-all">
+                    {generatedPassword.password}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(generatedPassword.password)}
+                    className="p-3 bg-primary/20 rounded-lg text-primary hover:bg-primary/30 transition-all"
+                    title="Copiar"
+                  >
+                    📋
+                  </button>
+                </div>
+              </div>
+              <div className="text-sm text-neutral">
+                <p><strong>Email:</strong> {generatedPassword.email}</p>
+                <p><strong>Nome:</strong> {generatedPassword.name}</p>
+              </div>
+              <Button variant="primary" className="w-full" onClick={() => setGeneratedPassword(null)}>
+                Fechar
+              </Button>
+            </div>
+          </Modal>
+        )}
+
+        <ConfirmModal 
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleDelete}
+          title="Confirmar Exclusão"
+          message="Esta ação é irreversível e removerá todos os dados financeiros associados a este usuário."
+          confirmText="Sim, Excluir Definitivamente"
+          variant="danger"
+        />
+      </div>
+    </MainLayout>
+  );
+}

@@ -12,8 +12,16 @@ import { EarningsPage } from './pages/Earnings';
 import { ExpensesPage } from './pages/Expenses';
 import { KmPage } from './pages/Km';
 import { MaintenancePage } from './pages/Maintenance';
-import { AdminPage } from './pages/Admin';
 import { ProfilePage } from './pages/Profile';
+
+// Admin Pages
+import { AdminOverviewPage } from './pages/AdminOverview';
+import { AdminUsersPage } from './pages/AdminUsers';
+import { AdminAnalyticsPage } from './pages/AdminAnalytics';
+import { AdminLogsPage } from './pages/AdminLogs';
+import { AdminAlertsPage } from './pages/AdminAlerts';
+
+const AdminPage = AdminOverviewPage;
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -155,7 +163,43 @@ function App() {
           path="/admin"
           element={
             <AdminRoute>
-              <AdminPage />
+              <AdminOverviewPage />
+            </AdminRoute>
+          }
+        />
+        
+        <Route
+          path="/admin/users"
+          element={
+            <AdminRoute>
+              <AdminUsersPage />
+            </AdminRoute>
+          }
+        />
+        
+        <Route
+          path="/admin/analytics"
+          element={
+            <AdminRoute>
+              <AdminAnalyticsPage />
+            </AdminRoute>
+          }
+        />
+        
+        <Route
+          path="/admin/logs"
+          element={
+            <AdminRoute>
+              <AdminLogsPage />
+            </AdminRoute>
+          }
+        />
+        
+        <Route
+          path="/admin/alerts"
+          element={
+            <AdminRoute>
+              <AdminAlertsPage />
             </AdminRoute>
           }
         />

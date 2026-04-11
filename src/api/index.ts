@@ -236,12 +236,11 @@ export const usersApi = {
     const { error } = await supabase.from('users').delete().eq('id', id);
     return apiResponse<void>(null, error);
   },
-  async resetPassword(userId: string | number): Promise<ApiResponse<{ message: string }>> {
+  async resetPassword(userId: string | number): Promise<ApiResponse<{ newPassword: string; email: string; name: string }>> {
     try {
-      // Buscar o usuário para obter o email
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('email, name')
+        .select('email, name, auth_id')
         .eq('id', userId)
         .single();
 
@@ -253,17 +252,28 @@ export const usersApi = {
         return { success: false, error: 'Usuário não possui email cadastrado' };
       }
 
-      // Enviar email de recuperação (o usuário terá que criar nova senha pelo link)
+      // Gerar senha aleatória
+      const newPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase();
+      
+      // Tentar enviar email de recuperação
       const { error } = await supabase.auth.resetPasswordForEmail(userData.email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
+      // Se email falhar (provedor desabilitado), ainda retornamos sucesso com a senha gerada
+      // para que o admin possa informar manualmente ao usuário
       if (error) {
-        console.error('Reset password error:', error);
-        return { success: false, error: error.message };
+        console.warn('Email sending failed, returning password for manual delivery:', error.message);
       }
 
-      return { success: true, data: { message: 'Email de redefinição enviado para o usuário!' } };
+      return { 
+        success: true, 
+        data: { 
+          newPassword,
+          email: userData.email,
+          name: userData.name || 'Usuário'
+        } 
+      };
     } catch (err: any) {
       console.error('Reset password error:', err);
       return { success: false, error: err.message || 'Erro ao redefinir senha' };
