@@ -40,6 +40,10 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState<{ password: string; email: string; name: string } | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [resetType, setResetType] = useState<'random' | 'manual'>('random');
+  const [manualPassword, setManualPassword] = useState('');
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [userIdToReset, setUserIdToReset] = useState<string | null>(null);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, string>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -234,18 +238,26 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     setIsDeleteModalOpen(false);
   };
 
-  const handleResetPassword = async (userId: string) => {
+  const handleResetPassword = async () => {
+    if (!userIdToReset) return;
+    
+    if (resetType === 'manual' && manualPassword.length < 6) {
+      return toast.error('A senha manual deve ter pelo menos 6 caracteres');
+    }
+
     setIsResettingPassword(true);
     try {
-      const res = await usersApi.resetPassword(userId);
+      const res = await usersApi.resetPassword(userIdToReset, resetType === 'manual' ? manualPassword : undefined);
       if (res.success && res.data) {
         setGeneratedPassword({
           password: res.data.newPassword,
           email: res.data.email,
           name: res.data.name
         });
-        await logsApi.create('REDEFINIR_SENHA', `Redefiniu senha do usuário ID ${userId}`);
-        toast.success('Senha redefinida! Copie e envie ao usuário.');
+        await logsApi.create('REDEFINIR_SENHA', `Redefiniu senha do usuário ID ${userIdToReset} (${resetType})`);
+        toast.success(resetType === 'random' ? 'Senha aleatória gerada!' : 'Senha manual definida!');
+        setIsResetModalOpen(false);
+        setManualPassword('');
       } else {
         toast.error(res.error || 'Erro ao redefinir senha');
       }
@@ -457,7 +469,10 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                               <Eye className="w-3.5 h-3.5" />
                             </button>
                           )}
-                        </div>
+                        </div>{
+                              setUserIdToReset(user.id);
+                              setIsResetModalOpen(true);
+                            }
                       </td>
                       <td className="p-4">
                         <p className="text-xs text-gray-500">{user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '-'}</p>
@@ -587,7 +602,73 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                 {isSaving ? 'Salvando...' : selectedUser ? "Salvar Alterações" : "Criar Usuário"}
               </Button>
             </div>
+          </div>Type Selection Modal */}
+        <Modal
+          isOpen={isResetModalOpen}
+          onClose={() => setIsResetModalOpen(false)}
+          title="Redefinir Senha"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setResetType('random')}
+                className={clsx(
+                  "p-3 rounded-xl border-2 transition-all text-sm font-bold",
+                  resetType === 'random' 
+                    ? "border-primary bg-primary/10 text-primary" 
+                    : "border-transparent bg-premium-darkGray/50 text-gray-500"
+                )}
+              >
+                🔢 Aleatória
+              </button>
+              <button
+                type="button"
+                onClick={() => setResetType('manual')}
+                className={clsx(
+                  "p-3 rounded-xl border-2 transition-all text-sm font-bold",
+                  resetType === 'manual' 
+                    ? "border-primary bg-primary/10 text-primary" 
+                    : "border-transparent bg-premium-darkGray/50 text-gray-500"
+                )}
+              >
+                ⌨️ Manual
+              </button>
+            </div>
+
+            {resetType === 'manual' && (
+              <Input
+                label="Nova Senha"
+                type="text"
+                placeholder="Mínimo 6 caracteres"
+                value={manualPassword}
+                onChange={(e) => setManualPassword(e.target.value)}
+                autoFocus
+              />
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <Button 
+                variant="secondary" 
+                className="flex-1" 
+                onClick={() => setIsResetModalOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                variant="primary" 
+                className="flex-1" 
+                onClick={handleResetPassword}
+                isLoading={isResettingPassword}
+              >
+                Redefinir
+              </Button>
+            </div>
           </div>
+        </Modal>
+
+        {/* Password Reset 
         </Modal>
 
         {/* Password Reset Modal */}
