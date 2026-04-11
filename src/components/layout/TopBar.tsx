@@ -16,6 +16,13 @@ export function TopBar() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const planDisplay = userPlan?.plano_display || 'Free';
+  const planName = userPlan?.plano_nome || 'free';
+
+  const planBadgeClass = planName === 'premium'
+    ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-amber-500/30 text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-300'
+    : planName === 'pro'
+    ? 'bg-gradient-to-r from-violet-500/20 to-blue-500/20 border-violet-500/30 text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400'
+    : 'bg-white/5 border-white/10 text-neutral';
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -97,7 +104,21 @@ export function TopBar() {
               <span className="text-sm font-medium text-white truncate max-w-[120px]">
                 {user?.nome || user?.name || 'Usuário'}
               </span>
-              <span className="text-[11px] text-neutral">{planDisplay}</span>
+              <span className={clsx(
+                "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border inline-block mt-0.5",
+                planName === 'premium' && "bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-amber-500/30",
+                planName === 'pro' && "bg-gradient-to-r from-violet-500/20 to-blue-500/20 border-violet-500/30",
+                planName === 'free' && "bg-white/5 border-white/10"
+              )}>
+                <span className={clsx(
+                  "font-bold",
+                  planName === 'premium' && "bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent",
+                  planName === 'pro' && "bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent",
+                  planName === 'free' && "text-neutral"
+                )}>
+                  {planDisplay}
+                </span>
+              </span>
             </div>
             <ChevronDown className={clsx(
               "w-3.5 h-3.5 text-neutral transition-transform duration-200 hidden sm:block",

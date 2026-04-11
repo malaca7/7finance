@@ -42,7 +42,6 @@ const personalCategories: MenuCategory[] = [
     icon: User,
     items: [
       { path: '/dashboard', label: 'Início', icon: LayoutDashboard },
-      { path: '/perfil', label: 'Perfil', icon: User },
       { path: '/planos', label: 'Planos', icon: Crown },
     ],
   },
