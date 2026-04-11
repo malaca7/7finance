@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTheme } from '../components/ThemeContext';
 import Cropper from 'react-easy-crop';
 import { 
   User as UserIcon, 
@@ -46,7 +47,10 @@ export function ProfilePage() {
     telefone: '',
     tipo: 'app' as DriverType,
     foto_url: '',
+    theme: 'dark' as 'dark' | 'light',
   });
+
+  const { theme, setTheme } = useTheme();
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -58,10 +62,12 @@ export function ProfilePage() {
         telefone: user.telefone || user.phone || '',
         tipo: (user.tipo || user.role || 'app') as DriverType,
         foto_url: user.foto_url || user.avatar_url || '',
+        theme: user.theme || 'dark',
       });
+      if (user.theme) setTheme(user.theme);
       fetchVeiculos();
     }
-  }, [user]);
+  }, [user, setTheme]);
 
   const fetchVeiculos = async () => {
     const response = await veiculosApi.getAll();
@@ -194,12 +200,11 @@ export function ProfilePage() {
       });
 
       if (response.success && response.data) {
-        // ATUALIZA O ESTADO COM OS DADOS RETORNADOS DIRETAMENTE DA API DE UPDATE
         useAppStore.setState((state) => ({
           ...state,
           user: response.data
         }));
-        
+        setTheme(formData.theme);
         toast.success('Perfil atualizado com sucesso!');
       } else {
         toast.error(response.error || 'Erro ao atualizar perfil');
@@ -319,6 +324,23 @@ export function ProfilePage() {
                     options={[
                       { value: 'app', label: 'Motorista de Aplicativo' },
                       { value: 'particular', label: 'Motorista Particular / Taxista' }
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
+                    <Settings2 className="w-3 h-3" /> Tema do sistema
+                  </label>
+                  <Select
+                    value={formData.theme}
+                    onChange={e => {
+                      setFormData({ ...formData, theme: e.target.value as 'dark' | 'light' });
+                      setTheme(e.target.value as 'dark' | 'light');
+                    }}
+                    options={[
+                      { value: 'dark', label: 'Escuro (padrão)' },
+                      { value: 'light', label: 'Claro' },
                     ]}
                   />
                 </div>

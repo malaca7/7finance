@@ -102,10 +102,10 @@ export function DashboardPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">
-              Olá, {user?.nome?.split(' ')[0]}! 👋
+            <h1 className="text-3xl font-extrabold text-white drop-shadow-lg">
+              Olá, <span className="text-primary">{user?.nome?.split(' ')[0]}</span>! 👋
             </h1>
-            <p className="text-gray-400 mt-1">Veja o resumo das suas finanças</p>
+            <p className="text-premium-muted mt-1 text-lg">Veja o resumo das suas finanças</p>
           </div>
           
           <Select
@@ -126,9 +126,9 @@ export function DashboardPage() {
                 <div className="p-2 bg-premium-gold/20 rounded-premium">
                   <TrendingUp className="w-5 h-5 text-premium-gold" />
                 </div>
-                <span className="text-gray-400 text-sm">Total Ganhos</span>
+                <span className="text-primary text-base font-semibold">Total Ganhos</span>
               </div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-3xl font-extrabold text-white drop-shadow">
                 {formatCurrency(summary?.totalGanhos || 0)}
               </p>
             </div>
@@ -142,9 +142,9 @@ export function DashboardPage() {
                 <div className="p-2 bg-red-500/20 rounded-premium">
                   <TrendingDown className="w-5 h-5 text-red-500" />
                 </div>
-                <span className="text-gray-400 text-sm">Total Despesas</span>
+                <span className="text-premium-muted text-base font-semibold">Total Despesas</span>
               </div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-3xl font-extrabold text-white drop-shadow">
                 {formatCurrency(summary?.totalDespesas || 0)}
               </p>
             </div>
@@ -158,9 +158,9 @@ export function DashboardPage() {
                 <div className={`p-2 rounded-premium ${(summary?.lucroLiquido || 0) >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
                   <DollarSign className={`w-5 h-5 ${(summary?.lucroLiquido || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`} />
                 </div>
-                <span className="text-gray-400 text-sm">Lucro Líquido</span>
+                <span className="text-accent text-base font-semibold">Lucro Líquido</span>
               </div>
-              <p className={`text-2xl font-bold ${(summary?.lucroLiquido || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <p className={`text-3xl font-extrabold drop-shadow ${(summary?.lucroLiquido || 0) >= 0 ? 'text-green-400' : 'text-red-500'}`}>
                 {formatCurrency(summary?.lucroLiquido || 0)}
               </p>
             </div>
@@ -174,9 +174,9 @@ export function DashboardPage() {
                 <div className="p-2 bg-blue-500/20 rounded-premium">
                   <Gauge className="w-5 h-5 text-blue-500" />
                 </div>
-                <span className="text-gray-400 text-sm">KM Rodados</span>
+                <span className="text-premium-muted text-base font-semibold">KM Rodados</span>
               </div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-3xl font-extrabold text-white drop-shadow">
                 {formatNumber(summary?.kmRodados || 0)} km
               </p>
             </div>

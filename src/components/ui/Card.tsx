@@ -11,10 +11,10 @@ export function Card({ children, className, variant = 'default' }: CardProps) {
   return (
     <div
       className={clsx(
-        'bg-premium-darkGray rounded-premium-lg p-6 shadow-premium',
-        'border border-premium-gray/30',
+        'bg-premium-dark/90 backdrop-blur-md rounded-2xl p-6 shadow-[0_2px_24px_0_rgba(0,0,0,0.20)]',
+        'border border-premium-gray/40',
         {
-          'border-premium-gold/50': variant === 'highlight',
+          'border-primary/80 shadow-[0_0_32px_0_rgba(111,76,255,0.25)]': variant === 'highlight',
           'border-red-500/50': variant === 'warning',
         },
         className

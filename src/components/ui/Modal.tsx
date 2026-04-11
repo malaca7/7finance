@@ -113,7 +113,7 @@ export function ConfirmModal({
             'px-4 py-2 rounded-premium font-medium transition-colors',
             variant === 'danger'
               ? 'bg-red-600 hover:bg-red-700 text-white'
-              : 'bg-premium-gold hover:bg-premium-goldLight text-premium-black'
+              : 'bg-gradient-to-r from-primary via-accent to-primary text-premium-black shadow-[0_0_16px_0_rgba(57,255,20,0.25)] hover:from-accent hover:to-primary'
           )}
         >
           {confirmText}

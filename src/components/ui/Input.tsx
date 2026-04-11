@@ -25,7 +25,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative group">
           {icon && (
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-premium-gold transition-colors">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors">
               {icon}
             </div>
           )}
@@ -34,9 +34,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={inputType}
             className={clsx(
-              'w-full bg-premium-gray text-white placeholder-gray-500',
-              'border border-premium-gray/50 rounded-premium',
-              'focus:outline-none focus:ring-2 focus:ring-premium-gold focus:border-transparent',
+              'w-full bg-premium-darkGray text-premium-text placeholder-premium-muted',
+              'border-2 border-premium-gray/40 rounded-full px-5 py-3 text-lg focus:border-premium-limao focus:ring-2 focus:ring-premium-limao',
+              'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
               'transition-all duration-200',
               'disabled:opacity-50 disabled:cursor-not-allowed',
               icon ? 'pl-11 pr-4 py-3' : 'px-4 py-3',
@@ -50,7 +50,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-premium-gold transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
