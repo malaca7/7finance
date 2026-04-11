@@ -88,6 +88,8 @@ export function LoginPage() {
       setForgotLoading(false);
     }
   };
+
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (tipos.length === 0) {
       setError('Selecione ao menos um tipo de atuação');
@@ -102,7 +104,7 @@ export function LoginPage() {
         nome,
         telefone,
         email,
-        tipo: tipos.join(','), // Envia como string separada por vírgula
+        tipo: tipos.join(','),
         password,
       });
       
