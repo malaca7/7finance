@@ -482,15 +482,14 @@ export function EarningsPage() {
         <div className="pl-10 pointer-events-auto">
           <Button 
             onClick={() => openModal()} 
-            className="h-14 px-6 bg-green-600 hover:bg-green-500 text-white rounded-full shadow-2xl shadow-green-900/40 border border-green-400/20 active:scale-95 transition-all flex items-center gap-2 group"
-          >
-            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-            <span className="font-bold text-sm">NOVO GANHO</span>
-          <Button 
-            onClick={() => openModal()} 
             variant="primary"
             className="h-14 px-6 flex items-center gap-2 group font-bold text-lg"
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
             <span>NOVO GANHO</span>
           </Button>
+        </div>
+      </div>
+    </MainLayout>
+  );
+}

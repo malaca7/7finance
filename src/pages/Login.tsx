@@ -106,15 +106,14 @@ export function LoginPage() {
 
       <div className="w-full max-w-md z-10">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center mb-4">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center">
             <img 
               src="https://i.postimg.cc/gY9KR36Q/Chat-GPT-Image-7-de-abr-de-2026-13-14-27.png" 
               alt="7 Finance Logo" 
-              className="w-32 h-32 object-contain drop-shadow-glow"
+              className="w-48 h-48 object-contain drop-shadow-glow"
             />
           </div>
-          <p className="text-gray-400 mt-2 font-medium text-sm tracking-widest uppercase">Premium Driver Management</p>
         </div>
 
         {/* Login Card */}

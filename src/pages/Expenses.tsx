@@ -492,3 +492,8 @@ export function ExpensesPage() {
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
             <span>NOVA DESPESA</span>
           </Button>
+        </div>
+      </div>
+    </MainLayout>
+  );
+}
