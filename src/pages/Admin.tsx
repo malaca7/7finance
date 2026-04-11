@@ -216,7 +216,7 @@ export function AdminPage() {
         {/* Header Admin */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">7 <span className="text-premium-gold">Admin</span></h1>
+            <h1 className="text-3xl font-bold text-white tracking-tight">7 <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent drop-shadow-[0_0_8px_#39FF14]">Admin</span></h1>
             <p className="text-gray-400 text-sm">Controle total da plataforma e gestão de usuários</p>
           </div>
           
@@ -248,7 +248,7 @@ export function AdminPage() {
                 className={clsx(
                   "flex items-center gap-1.5 px-3 py-2 rounded-app text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
                   activeTab === tab.id 
-                    ? "bg-premium-gold text-premium-black shadow-glow" 
+                    ? "bg-gradient-to-r from-primary via-accent to-primary text-premium-black shadow-[0_0_16px_0_rgba(57,255,20,0.25)]" 
                     : "text-gray-400 hover:text-white hover:bg-premium-gray/50"
                 )}
               >
@@ -263,7 +263,7 @@ export function AdminPage() {
           <div className="space-y-6 animate-fade-in">
             {/* KPI Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card variant="highlight" className="border-l-4 border-l-premium-gold">
+              <Card variant="highlight" className="border-l-4 border-l-primary">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Usuários Ativos</p>
@@ -470,7 +470,7 @@ export function AdminPage() {
                         <tr key={user.id} className="hover:bg-premium-gray/10 transition-colors">
                           <td className="p-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-premium-gold/10 border border-premium-gold/20 flex items-center justify-center text-premium-gold font-bold">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 via-accent/10 to-primary/10 border border-primary/30 flex items-center justify-center text-primary font-bold shadow-[0_0_8px_#39FF14]">
                                 {(user.nome || user.name || 'U').charAt(0)}
                               </div>
                               <div>
@@ -485,7 +485,7 @@ export function AdminPage() {
                           <td className="p-4">
                             <span className={clsx(
                               "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                              user.role === 'admin' ? "bg-premium-gold/20 text-premium-gold" : "bg-blue-500/20 text-blue-400"
+                              user.role === 'admin' ? "bg-gradient-to-r from-primary/20 via-accent/10 to-primary/10 text-primary" : "bg-blue-500/20 text-blue-400"
                             )}>
                               {user.role === 'admin' ? 'Admin' : 'Usuário'}
                             </span>
@@ -505,7 +505,7 @@ export function AdminPage() {
                             <div className="flex justify-end gap-2">
                               <button 
                                 onClick={() => openUserModal(user)}
-                                className="p-2 text-gray-400 hover:text-premium-gold hover:bg-premium-gold/10 rounded-lg transition-all"
+                                className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                                 title="Editar"
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -531,7 +531,7 @@ export function AdminPage() {
                 <span className="text-xs text-gray-500">Mostrando {filteredUsers.length} de {allUsers.length} usuários</span>
                 <div className="flex gap-2">
                   <button className="px-3 py-1 bg-premium-gray/50 hover:bg-premium-gray text-white text-xs rounded transition-all disabled:opacity-30">Anterior</button>
-                  <button className="px-3 py-1 bg-premium-gold text-premium-black text-xs font-bold rounded transition-all">Próxima</button>
+                  <button className="px-3 py-1 bg-gradient-to-r from-primary via-accent to-primary text-premium-black text-xs font-bold rounded transition-all shadow-[0_0_8px_#39FF14]">Próxima</button>
                 </div>
               </div>
             </Card>
