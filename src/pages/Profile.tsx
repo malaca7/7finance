@@ -10,7 +10,10 @@ import {
   Shield,
   Plus,
   Trash2,
-  Edit2
+  Edit2,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { Card, Button, Input, Select, Modal } from '../components/ui';
@@ -51,6 +54,14 @@ export function ProfilePage() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Password change state
+  const [senhaAtual, setSenhaAtual] = useState('');
+  const [novaSenha, setNovaSenha] = useState('');
+  const [confirmSenha, setConfirmSenha] = useState('');
+  const [senhaLoading, setSenhaLoading] = useState(false);
+  const [showSenhaAtual, setShowSenhaAtual] = useState(false);
+  const [showNovaSenha, setShowNovaSenha] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -343,7 +354,91 @@ export function ProfilePage() {
         </form>
 
         {/* Veículos Section */}
-        <div className="mt-12">
+        <div className="mt-8">
+          <Card>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                <Lock className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Alterar Senha</h2>
+                <p className="text-xs text-neutral">Mantenha sua conta segura</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Senha atual</label>
+                <div className="relative">
+                  <Input
+                    type={showSenhaAtual ? 'text' : 'password'}
+                    value={senhaAtual}
+                    onChange={(e) => setSenhaAtual(e.target.value)}
+                    placeholder="Digite sua senha atual"
+                  />
+                  <button type="button" onClick={() => setShowSenhaAtual(!showSenhaAtual)} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral hover:text-white">
+                    {showSenhaAtual ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Nova senha</label>
+                <div className="relative">
+                  <Input
+                    type={showNovaSenha ? 'text' : 'password'}
+                    value={novaSenha}
+                    onChange={(e) => setNovaSenha(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                  <button type="button" onClick={() => setShowNovaSenha(!showNovaSenha)} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral hover:text-white">
+                    {showNovaSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Confirmar nova senha</label>
+                <Input
+                  type="password"
+                  value={confirmSenha}
+                  onChange={(e) => setConfirmSenha(e.target.value)}
+                  placeholder="Repita a nova senha"
+                />
+              </div>
+              <Button
+                onClick={async () => {
+                  if (!senhaAtual) return toast.error('Digite a senha atual');
+                  if (novaSenha.length < 6) return toast.error('Nova senha deve ter pelo menos 6 caracteres');
+                  if (novaSenha !== confirmSenha) return toast.error('As senhas não coincidem');
+                  setSenhaLoading(true);
+                  try {
+                    const { error } = await (await import('../api/supabase')).supabase.auth.updateUser({ password: novaSenha });
+                    if (error) {
+                      toast.error(error.message || 'Erro ao alterar senha');
+                    } else {
+                      toast.success('Senha alterada com sucesso!');
+                      setSenhaAtual('');
+                      setNovaSenha('');
+                      setConfirmSenha('');
+                    }
+                  } catch {
+                    toast.error('Erro inesperado');
+                  } finally {
+                    setSenhaLoading(false);
+                  }
+                }}
+                isLoading={senhaLoading}
+                variant="primary"
+                className="w-full"
+              >
+                <Lock className="w-4 h-4 mr-2" />
+                Alterar Senha
+              </Button>
+            </div>
+          </Card>
+        </div>
+
+        {/* Veículos Section */}
+        <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white">Meus Veículos</h2>
             <Button 
