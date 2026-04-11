@@ -82,6 +82,186 @@ export function MaintenancePage() {
   const overdue = filteredMaintenances.filter(m => m.status === 'atrasado').length;
   const completed = filteredMaintenances.filter(m => m.status === 'concluido').length;
 
+  useEffect(() => {
+    loadMaintenances();
+    loadVeiculos();
+    loadKm();
+  }, []);
+
+  const loadKm = async () => {
+    try {
+      const response = await kmApi.getAll();
+      if (response.success && response.data) {
+        useAppStore.getState().setKmRegistries(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading km:', error);
+    }
+  };
+
+  const loadVeiculos = async () => {
+    try {
+      const response = await veiculosApi.getAll();
+      if (response.success && response.data) {
+        setVeiculos(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading veiculos:', error);
+    }
+  };
+
+  const loadMaintenances = async () => {
+    setIsLoading(true);
+    try {
+      const response = await maintenanceApi.getAll();
+      if (response.success && response.data) {
+        setMaintenances(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading maintenances:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const openModal = (maintenance?: Maintenance) => {
+    if (maintenance) {
+      setSelectedMaintenance(maintenance);
+      const inferredType = maintenanceTypeOptions.find(o => maintenance.descricao?.toLowerCase().includes(o.label.toLowerCase()));
+      setTipo((inferredType?.value as MaintenanceType) || 'oleo');
+      setVeiculoId(maintenance.veiculo_id?.toString() || (veiculos.length > 0 ? veiculos[0].id.toString() : ''));
+      setProximaManutencaoKm(maintenance.proxima_manutencao_km?.toString() || '');
+      setDataManutencao(maintenance.data ? getLocalDatetimeForInput(maintenance.data) : '');
+      setValor(maintenance.valor?.toString() || '');
+      setObs(maintenance.descricao || '');
+    } else {
+      setSelectedMaintenance(null);
+      setTipo('oleo');
+      setVeiculoId(filterVeiculoId !== 'all' ? filterVeiculoId : (veiculos.length > 0 ? veiculos[0].id.toString() : ''));
+      setProximaManutencaoKm('');
+      setDataManutencao(getLocalDatetimeForInput());
+      setValor('');
+      setObs('');
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const maintenanceData = {
+        descricao: obs || getTypeLabel(tipo),
+        km_registro: proximaManutencaoKm ? parseInt(proximaManutencaoKm) : null,
+        proxima_manutencao_km: proximaManutencaoKm ? parseInt(proximaManutencaoKm) : null,
+        valor: valor ? parseFloat(valor) : 0,
+        data: dataManutencao || new Date().toISOString(),
+        status: selectedMaintenance?.status || 'pendente',
+        veiculo_id: veiculoId ? parseInt(veiculoId) : null,
+      };
+
+      let response;
+      if (selectedMaintenance) {
+        response = await maintenanceApi.update(selectedMaintenance.id, maintenanceData);
+        if (response.success) {
+          updateMaintenance(selectedMaintenance.id, { ...selectedMaintenance, ...maintenanceData } as any);
+        }
+      } else {
+        response = await maintenanceApi.create(maintenanceData);
+        if (response.success && response.data) {
+          addMaintenance(response.data);
+        }
+      }
+
+      setIsModalOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving maintenance:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await maintenanceApi.delete(deleteId);
+      if (response.success) {
+        deleteMaintenance(deleteId);
+      }
+    } catch (error) {
+      console.error('Error deleting maintenance:', error);
+    } finally {
+      setIsLoading(false);
+      setDeleteId(null);
+    }
+  };
+
+  const handleMarkComplete = async (id: number) => {
+    setIsLoading(true);
+    try {
+      const response = await maintenanceApi.update(id, { status: 'concluido' });
+      if (response.success && response.data) {
+        updateMaintenance(id, response.data);
+      }
+    } catch (error) {
+      console.error('Error updating maintenance:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedMaintenance(null);
+    setTipo('oleo');
+    setVeiculoId(veiculos.length > 0 ? veiculos[0].id.toString() : '');
+    setProximaManutencaoKm('');
+    setDataManutencao('');
+    setValor('');
+    setObs('');
+  };
+
+  const formatNumber = (value: number) => {
+    return new Intl.NumberFormat('pt-BR').format(value);
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
+  const getTypeLabel = (type: MaintenanceType) => {
+    const option = maintenanceTypeOptions.find(o => o.value === type);
+    return option?.label || type;
+  };
+
+  const getStatusColor = (status: MaintenanceStatus) => {
+    switch (status) {
+      case 'pendente': return 'bg-yellow-500/20 text-yellow-400';
+      case 'urgente': return 'bg-orange-500/20 text-orange-400';
+      case 'atrasado': return 'bg-negative/20 text-negative';
+      case 'concluido': return 'bg-primary/20 text-primary';
+      default: return 'bg-neutral/20 text-neutral';
+    }
+  };
+
+  const getStatusIcon = (status: MaintenanceStatus) => {
+    switch (status) {
+      case 'concluido': return <CheckCircle className="w-4 h-4" />;
+      case 'atrasado': return <AlertTriangle className="w-4 h-4" />;
+      default: return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const getVeiculoLabel = (maintenance: Maintenance) => {
+    if (maintenance.veiculos) {
+      return `${maintenance.veiculos.modelo}${maintenance.veiculos.placa ? ` (${maintenance.veiculos.placa})` : ''}`;
+    }
+    return null;
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
