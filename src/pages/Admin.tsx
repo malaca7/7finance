@@ -68,6 +68,9 @@ export function AdminPage() {
   // Logs filtering
   const [logSearchTerm, setLogSearchTerm] = useState('');
   const [logFilterAction, setLogFilterAction] = useState<string>('all');
+  const [logFilterUser, setLogFilterUser] = useState<string>('all');
+  const [logDateStart, setLogDateStart] = useState<string>('');
+  const [logDateEnd, setLogDateEnd] = useState<string>('');
 
   useEffect(() => {
     loadAllAdminData();
@@ -79,7 +82,12 @@ export function AdminPage() {
       const [usersRes, dashRes, logsRes] = await Promise.all([
         usersApi.getAll(),
         adminApi.getDashboardData(),
-        logsApi.getAll()
+        logsApi.getAll({
+          userId: logFilterUser !== 'all' ? logFilterUser : undefined,
+          action: logFilterAction !== 'all' ? logFilterAction : undefined,
+          startDate: logDateStart || undefined,
+          endDate: logDateEnd ? `${logDateEnd}T23:59:59` : undefined
+        })
       ]);
 
       if (usersRes.success) setAllUsers((usersRes.data as User[]) || []);
@@ -652,29 +660,94 @@ export function AdminPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <input 
                     type="text"
-                    placeholder="Buscar nos logs por ação, descrição ou admin..."
+                    placeholder="Buscar nos logs..."
                     value={logSearchTerm}
                     onChange={(e) => setLogSearchTerm(e.target.value)}
                     className="w-full bg-premium-black border border-premium-gray/50 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:ring-1 focus:ring-premium-gold transition-all"
                   />
                 </div>
-                <Select 
+                
+                {/* Filter by User */}
+                <select
+                  value={logFilterUser}
+                  onChange={(e) => {
+                    setLogFilterUser(e.target.value);
+                    loadAllAdminData();
+                  }}
+                  className="bg-premium-darkGray border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:border-primary focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="all">Todos os Usuários</option>
+                  {allUsers.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.nome || user.name || user.email || user.id}
+                    </option>
+                  ))}
+                </select>
+                
+                {/* Filter by Action */}
+                <select
                   value={logFilterAction}
-                  onChange={(e) => setLogFilterAction(e.target.value)}
-                  options={[
-                    { value: 'all', label: 'Todas Ações' },
-                    { value: 'CRIAR_USUARIO', label: 'Criar Usuário' },
-                    { value: 'EDITAR_USUARIO', label: 'Editar Usuário' },
-                    { value: 'EXCLUIR_USUARIO', label: 'Excluir Usuário' },
-                    { value: 'EXPORTAR', label: 'Exportar' },
-                    { value: 'LOGIN', label: 'Login' },
-                  ]}
-                  className="!w-48"
-                />
-                <Button variant="outline" size="sm" onClick={loadAllAdminData}>
+                  onChange={(e) => {
+                    setLogFilterAction(e.target.value);
+                    loadAllAdminData();
+                  }}
+                  className="bg-premium-darkGray border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:border-primary focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="all">Todas Ações</option>
+                  <option value="LOGIN">Login</option>
+                  <option value="LOGOUT">Logout</option>
+                  <option value="CRIAR_REGISTRO">Criar Registro</option>
+                  <option value="EDITAR_REGISTRO">Editar Registro</option>
+                  <option value="EXCLUIR_REGISTRO">Excluir Registro</option>
+                  <option value="CRIAR_USUARIO">Criar Usuário</option>
+                  <option value="EDITAR_USUARIO">Editar Usuário</option>
+                  <option value="EXCLUIR_USUARIO">Excluir Usuário</option>
+                  <option value="REDEFINIR_SENHA">Redefinir Senha</option>
+                  <option value="EXPORTAR">Exportar</option>
+                  <option value="ALTERAR_PERFIL">Alterar Perfil</option>
+                </select>
+              </div>
+              
+              {/* Date Filters */}
+              <div className="flex flex-col md:flex-row gap-4 mt-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-neutral">De:</label>
+                  <input
+                    type="date"
+                    value={logDateStart}
+                    onChange={(e) => setLogDateStart(e.target.value)}
+                    className="bg-premium-darkGray border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-neutral">Até:</label>
+                  <input
+                    type="date"
+                    value={logDateEnd}
+                    onChange={(e) => setLogDateEnd(e.target.value)}
+                    className="bg-premium-darkGray border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <Button variant="primary" size="sm" onClick={loadAllAdminData} className="!py-2">
                   <Activity className="w-4 h-4 mr-2" />
-                  Atualizar
+                  Filtrar
                 </Button>
+                {(logFilterUser !== 'all' || logFilterAction !== 'all' || logDateStart || logDateEnd) && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setLogFilterUser('all');
+                      setLogFilterAction('all');
+                      setLogDateStart('');
+                      setLogDateEnd('');
+                      loadAllAdminData();
+                    }}
+                    className="!py-2"
+                  >
+                    Limpar Filtros
+                  </Button>
+                )}
               </div>
             </Card>
 
@@ -733,7 +806,7 @@ export function AdminPage() {
                     <thead>
                       <tr className="bg-premium-dark border-b border-premium-gray/30">
                         <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Data / Hora</th>
-                        <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Administrador</th>
+                        <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Usuário</th>
                         <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Ação</th>
                         <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Descrição</th>
                       </tr>
@@ -741,12 +814,12 @@ export function AdminPage() {
                     <tbody className="divide-y divide-premium-gray/20">
                       {(() => {
                         const filtered = logs.filter(log => {
+                          const userName = (log.users?.name || log.users?.email || 'Usuário');
                           const matchesSearch = logSearchTerm === '' || 
                             (log.action || '').toLowerCase().includes(logSearchTerm.toLowerCase()) ||
                             (log.entity || '').toLowerCase().includes(logSearchTerm.toLowerCase()) ||
-                            ((log as any).admin_name || '').toLowerCase().includes(logSearchTerm.toLowerCase());
-                          const matchesAction = logFilterAction === 'all' || log.action === logFilterAction;
-                          return matchesSearch && matchesAction;
+                            userName.toLowerCase().includes(logSearchTerm.toLowerCase());
+                          return matchesSearch;
                         });
                         
                         if (filtered.length === 0) {
@@ -774,6 +847,12 @@ export function AdminPage() {
                             'EXCLUIR_USUARIO': 'Excluir Usuário',
                             'EXPORTAR': 'Exportação',
                             'LOGIN': 'Login',
+                            'LOGOUT': 'Logout',
+                            'CRIAR_REGISTRO': 'Criar Registro',
+                            'EDITAR_REGISTRO': 'Editar Registro',
+                            'EXCLUIR_REGISTRO': 'Excluir Registro',
+                            'REDEFINIR_SENHA': 'Redefinir Senha',
+                            'ALTERAR_PERFIL': 'Alterar Perfil',
                             'CREATE': 'Criar',
                           };
                           const colorClass = actionColors[log.action] || 'bg-white/5 text-gray-400 border-white/10';
@@ -786,10 +865,10 @@ export function AdminPage() {
                               </td>
                               <td className="p-4">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-6 h-6 rounded-full bg-premium-gold/10 flex items-center justify-center text-premium-gold text-[10px] font-bold">
-                                    {((log as any).admin_name || 'S').charAt(0)}
+                                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
+                                    {(log.users?.name || log.users?.email || 'U').charAt(0).toUpperCase()}
                                   </div>
-                                  <span className="text-premium-gold font-bold">{(log as any).admin_name || 'Sistema'}</span>
+                                  <span className="text-white font-medium">{log.users?.name || log.users?.email || 'Usuário do Sistema'}</span>
                                 </div>
                               </td>
                               <td className="p-4">

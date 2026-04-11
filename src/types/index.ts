@@ -192,3 +192,82 @@ export interface RegisterFormData {
   tipo: DriverType;
   password: string;
 }
+
+// ============== METAS FINANCEIRAS ==============
+export interface Goal {
+  id: number;
+  usuario_id?: string;
+  valor_meta: number;
+  mes_ano: string; // formato: YYYY-MM
+  valor_atual: number;
+  created_at?: string;
+}
+
+export interface GoalProgress {
+  percentual: number;
+  falta: number;
+  mediaDiaria: number;
+  diasRestantes: number;
+  nivel: 'iniciante' | 'bronze' | 'prata' | 'ouro' | 'diamante';
+  pontos: number;
+}
+
+// ============== INSIGHTS INTELIGENTES ==============
+export interface Insight {
+  id: string;
+  tipo: 'positivo' | 'negativo' | 'neutro';
+  categoria: 'gastos' | 'lucro' | 'produtividade' | 'manutencao';
+  titulo: string;
+  descricao: string;
+  valor?: number;
+  prioridade: 'alta' | 'media' | 'baixa';
+  created_at?: string;
+}
+
+// ============== PRECIFICAÇÃO INTELIGENTE ==============
+export interface PricingAnalysis {
+  custoPorKm: number;
+  lucroPorKm: number;
+  mediaValorCorrida: number;
+  KMmediaCorrida: number;
+  totalCorridasLucro: number;
+  totalCorridasPrejuizo: number;
+  valorIdealPorKm: number;
+  alertasPrejuizo: {
+    tipo: string;
+    valor: number;
+    data: string;
+  }[];
+}
+
+// ============== PLANOS E ASSINATURAS ==============
+export type PlanType = 'free' | 'premium' | 'enterprise';
+
+export interface Subscription {
+  id: number;
+  usuario_id?: string;
+  plano: PlanType;
+  status: 'ativa' | 'cancelada' | 'trial' | 'expirada';
+  data_inicio: string;
+  data_fim?: string;
+  created_at?: string;
+}
+
+export interface PlanFeature {
+  id: string;
+  nome: string;
+  descricao: string;
+  plano_free: boolean;
+  plano_premium: boolean;
+}
+
+// ============== ALERTAS DO SISTEMA ==============
+export interface SystemAlert {
+  id: string;
+  tipo: 'manutencao' | 'km' | 'despesa' | 'lucro' | 'geral';
+  prioridade: 'verde' | 'amarelo' | 'vermelho';
+  titulo: string;
+  mensagem: string;
+  acao?: string;
+  created_at?: string;
+}

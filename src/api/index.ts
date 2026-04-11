@@ -513,16 +513,34 @@ export const adminApi = {
 };
 
 export const logsApi = {
-  async getAll() {
+  async getAll(filters?: { userId?: string; action?: string; startDate?: string; endDate?: string }) {
     try {
-      const { data, error } = await supabase.rpc('admin_get_logs', { p_limit: 200 });
+      let query = supabase
+        .from('audit_logs')
+        .select('*, users!audit_logs_user_id_fkey(name, email)')
+        .order('created_at', { ascending: false })
+        .limit(500);
+
+      if (filters?.userId) {
+        query = query.eq('user_id', filters.userId);
+      }
+      if (filters?.action && filters.action !== 'all') {
+        query = query.eq('action', filters.action);
+      }
+      if (filters?.startDate) {
+        query = query.gte('created_at', filters.startDate);
+      }
+      if (filters?.endDate) {
+        query = query.lte('created_at', filters.endDate);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      // RPC retorna jsonb array com admin_name já populado
+      
       return { success: true, data: (data || []) as any[] };
     } catch (e: any) {
-      // Fallback: busca direto da tabela (sem nome do admin)
-      const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(200);
-      return apiResponse<any[]>(data, error);
+      console.error('Error loading logs:', e);
+      return { success: false, error: e.message };
     }
   },
   async create(acao: string, descricao: string) {
@@ -532,9 +550,351 @@ export const logsApi = {
       entity: descricao,
       metadata: { acao, descricao }
     };
-    // Só inclui user_id se conseguiu resolver (evita erro de FK com null/inválido)
     if (userId) insertData.user_id = userId;
     const { error } = await supabase.from('audit_logs').insert(insertData);
     return apiResponse<void>(null, error);
+  },
+  async getAvailableActions() {
+    return [
+      { value: 'all', label: 'Todas Ações' },
+      { value: 'LOGIN', label: 'Login' },
+      { value: 'LOGOUT', label: 'Logout' },
+      { value: 'CRIAR_REGISTRO', label: 'Criar Registro' },
+      { value: 'EDITAR_REGISTRO', label: 'Editar Registro' },
+      { value: 'EXCLUIR_REGISTRO', label: 'Excluir Registro' },
+      { value: 'CRIAR_USUARIO', label: 'Criar Usuário' },
+      { value: 'EDITAR_USUARIO', label: 'Editar Usuário' },
+      { value: 'EXCLUIR_USUARIO', label: 'Excluir Usuário' },
+      { value: 'REDEFINIR_SENHA', label: 'Redefinir Senha' },
+      { value: 'EXPORTAR', label: 'Exportar' },
+      { value: 'ALTERAR_PERFIL', label: 'Alterar Perfil' },
+    ];
+  }
+};
+
+// ============== METAS FINANCEIRAS ==============
+export const goalsApi = {
+  async getCurrent(monthYear?: string): Promise<ApiResponse<Goal>> {
+    const mesAno = monthYear || new Date().toISOString().slice(0, 7);
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('mes_ano', mesAno)
+      .single();
+    
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: data as Goal };
+  },
+
+  async createOrUpdate(mesAno: string, valorMeta: number): Promise<ApiResponse<Goal>> {
+    const userId = await getMyUserId();
+    if (!userId) return { success: false, error: 'Usuário não autenticado' };
+
+    const { data, error } = await supabase
+      .from('goals')
+      .upsert({
+        usuario_id: userId,
+        mes_ano: mesAno,
+        valor_meta: valorMeta,
+        valor_atual: 0
+      }, { onConflict: 'usuario_id,mes_ano' })
+      .select()
+      .single();
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: data as Goal };
+  },
+
+  async updateProgress(valorAtual: number): Promise<ApiResponse<void>> {
+    const mesAno = new Date().toISOString().slice(0, 7);
+    const userId = await getMyUserId();
+    if (!userId) return { success: false, error: 'Usuário não autenticado' };
+
+    const { error } = await supabase
+      .from('goals')
+      .update({ valor_atual: valorAtual })
+      .eq('mes_ano', mesAno)
+      .eq('usuario_id', userId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  },
+
+  async calculateProgress(goal: Goal): Promise<GoalProgress> {
+    const percentual = goal.valor_meta > 0 
+      ? Math.min((goal.valor_atual / goal.valor_meta) * 100, 100) 
+      : 0;
+    
+    const falta = Math.max(goal.valor_meta - goal.valor_atual, 0);
+    const hoje = new Date();
+    const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+    const diasRestantes = Math.max(ultimoDiaMes - hoje.getDate(), 0);
+    const mediaDiaria = diasRestantes > 0 ? falta / diasRestantes : 0;
+
+    let nivel: 'iniciante' | 'bronze' | 'prata' | 'ouro' | 'diamante';
+    const pontos = goal.valor_atual;
+
+    if (pontos >= 10000) nivel = 'diamante';
+    else if (pontos >= 5000) nivel = 'ouro';
+    else if (pontos >= 2000) nivel = 'prata';
+    else if (pontos >= 500) nivel = 'bronze';
+    else nivel = 'iniciante';
+
+    return { percentual, falta, mediaDiaria, diasRestantes, nivel, pontos };
+  }
+};
+
+// ============== INSIGHTS INTELIGENTES ==============
+export const insightsApi = {
+  async getInsights(): Promise<ApiResponse<Insight[]>> {
+    try {
+      const userId = await getMyUserId();
+      if (!userId) return { success: false, error: 'Usuário não autenticado' };
+
+      // Buscar dados dos últimos 30 dias
+      const data30Dias = new Date();
+      data30Dias.setDate(data30Dias.getDate() - 30);
+
+      const [earningsRes, expensesRes] = await Promise.all([
+        supabase.from('earnings').select('valor, tipo, data').gte('data', data30Dias.toISOString()),
+        supabase.from('expenses').select('valor, tipo, data').gte('data', data30Dias.toISOString())
+      ]);
+
+      const earnings = earningsRes.data || [];
+      const expenses = expensesRes.data || [];
+
+      const insights: Insight[] = [];
+      const totalGanhos = earnings.reduce((sum, e) => sum + (e.valor || 0), 0);
+      const totalDespesas = expenses.reduce((sum, e) => sum + (e.valor || 0), 0);
+      const lucro = totalGanhos - totalDespesas;
+
+      // Insight de lucro
+      if (lucro > 0) {
+        insights.push({
+          id: 'lucro-positivo',
+          tipo: 'positivo',
+          categoria: 'lucro',
+          titulo: 'Lucro Positivo!',
+          descricao: `Você teve R$ ${lucro.toFixed(2)} de lucro este mês. Continue assim!`,
+          valor: lucro,
+          prioridade: 'alta'
+        });
+      } else {
+        insights.push({
+          id: 'lucro-negativo',
+          tipo: 'negativo',
+          categoria: 'lucro',
+          titulo: 'Atenção ao Lucro',
+          descricao: `Seu lucro está negativo este mês. Revise suas despesas.`,
+          valor: lucro,
+          prioridade: 'alta'
+        });
+      }
+
+      // Insight de gastos por categoria
+      const gastosPorTipo: Record<string, number> = {};
+      expenses.forEach(e => {
+        gastosPorTipo[e.tipo] = (gastosPorTipo[e.tipo] || 0) + (e.valor || 0);
+      });
+
+      const maiorGasto = Object.entries(gastosPorTipo).sort((a, b) => b[1] - a[1])[0];
+      if (maiorGasto) {
+        insights.push({
+          id: 'maior-gasto',
+          tipo: 'neutro',
+          categoria: 'gastos',
+          titulo: 'Maior Gasto',
+          descricao: `Sua maior despesa é ${maiorGasto[0]} com R$ ${maiorGasto[1].toFixed(2)}`,
+          valor: maiorGasto[1],
+          prioridade: 'media'
+        });
+      }
+
+      // Melhor dia da semana
+      const ganhosPorDia: Record<string, number> = {};
+      earnings.forEach(e => {
+        const diaSemana = new Date(e.data).toLocaleDateString('pt-BR', { weekday: 'short' });
+        ganhosPorDia[diaSemana] = (ganhosPorDia[diaSemana] || 0) + (e.valor || 0);
+      });
+
+      const melhorDia = Object.entries(ganhosPorDia).sort((a, b) => b[1] - a[1])[0];
+      if (melhorDia) {
+        insights.push({
+          id: 'melhor-dia',
+          tipo: 'positivo',
+          categoria: 'produtividade',
+          titulo: 'Seu Melhor Dia',
+          descricao: `Você ganha mais às ${melhorDia[0]}s (R$ ${melhorDia[1].toFixed(2)})`,
+          valor: melhorDia[1],
+          prioridade: 'baixa'
+        });
+      }
+
+      return { success: true, data: insights };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  }
+};
+
+// ============== PRECIFICAÇÃO INTELIGENTE ==============
+export const pricingApi = {
+  async analyze(): Promise<ApiResponse<PricingAnalysis>> {
+    try {
+      const userId = await getMyUserId();
+      if (!userId) return { success: false, error: 'Usuário não autenticado' };
+
+      const data30Dias = new Date();
+      data30Dias.setDate(data30Dias.getDate() - 30);
+
+      const [earningsRes, expensesRes, kmRes] = await Promise.all([
+        supabase.from('earnings').select('valor, tipo, data').gte('data', data30Dias.toISOString()),
+        supabase.from('expenses').select('valor').eq('tipo', 'abastecimento'),
+        supabase.from('km_registry').select('km_inicial, km_final').gte('data', data30Dias.toISOString())
+      ]);
+
+      const earnings = earningsRes.data || [];
+      const expenses = expensesRes.data || [];
+      const kmRegistries = kmRes.data || [];
+
+      // Calcular KM total
+      let kmTotal = 0;
+      kmRegistries.forEach(k => {
+        const km = (k.km_final || 0) - k.km_inicial;
+        if (km > 0) kmTotal += km;
+      });
+
+      // Calcular custo por KM
+      const custoAbastecimento = expenses.reduce((sum, e) => sum + (e.valor || 0), 0);
+      const custoPorKm = kmTotal > 0 ? custoAbastecimento / kmTotal : 0;
+
+      // Calcular ganhos totais de corridas
+      const ganhosCorridas = earnings
+        .filter(e => e.tipo === 'corrida')
+        .reduce((sum, e) => sum + (e.valor || 0), 0);
+
+      const totalCorridas = earnings.filter(e => e.tipo === 'corrida').length;
+      const mediaValorCorrida = totalCorridas > 0 ? ganhosCorridas / totalCorridas : 0;
+      const KMmediaCorrida = totalCorridas > 0 ? kmTotal / totalCorridas : 0;
+
+      // Lucro por KM (considerando todas as despesas)
+      const totalDespesas30Dias = expenses.reduce((sum, e) => sum + (e.valor || 0), 0);
+      const lucroPorKm = kmTotal > 0 ? ((ganhosCorridas - totalDespesas30Dias) / kmTotal) : 0;
+
+      // Valor ideal por KM (margem de 30% sobre custo)
+      const valorIdealPorKm = custoPorKm * 1.3;
+
+      // Verificar corridas com possível prejuízo
+      const alertasPrejuizo: { tipo: string; valor: number; data: string }[] = [];
+      
+      // Se custo por KM for maior que valor ideal, gerar alerta
+      if (valorIdealPorKm > custoPorKm * 1.5) {
+        alertasPrejuizo.push({
+          tipo: 'custo-alto',
+          valor: custoPorKm,
+          data: new Date().toISOString()
+        });
+      }
+
+      return {
+        success: true,
+        data: {
+          custoPorKm,
+          lucroPorKm,
+          mediaValorCorrida,
+          KMmediaCorrida,
+          totalCorridasLucro: totalCorridas,
+          totalCorridasPrejuizo: alertasPrejuizo.length,
+          valorIdealPorKm,
+          alertasPrejuizo
+        }
+      };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  }
+};
+
+// ============== ASSINATURAS E PLANOS ==============
+export const subscriptionApi = {
+  async getCurrent(): Promise<ApiResponse<Subscription>> {
+    try {
+      const userId = await getMyUserId();
+      if (!userId) return { success: false, error: 'Usuário não autenticado' };
+
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('usuario_id', userId)
+        .in('status', ['ativa', 'trial'])
+        .order('data_inicio', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error || !data) {
+        // Usuário free por padrão
+        return {
+          success: true,
+          data: {
+            id: 0,
+            usuario_id: userId,
+            plano: 'free',
+            status: 'ativa',
+            data_inicio: new Date().toISOString()
+          } as Subscription
+        };
+      }
+
+      return { success: true, data: data as Subscription };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async upgrade(plano: PlanType): Promise<ApiResponse<Subscription>> {
+    try {
+      const userId = await getMyUserId();
+      if (!userId) return { success: false, error: 'Usuário não autenticado' };
+
+      const dataFim = new Date();
+      dataFim.setMonth(dataFim.getMonth() + 1);
+
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .upsert({
+          usuario_id: userId,
+          plano,
+          status: 'ativa',
+          data_inicio: new Date().toISOString(),
+          data_fim: dataFim.toISOString()
+        }, { onConflict: 'usuario_id' })
+        .select()
+        .single();
+
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data as Subscription };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  getFeatures(): PlanFeature[] {
+    return [
+      { id: 'dashboard', nome: 'Dashboard', descricao: 'Visualização básica do dashboard', plano_free: true, plano_premium: true },
+      { id: 'metas', nome: 'Metas Financeiras', descricao: 'Defina e acompanhe suas metas mensais', plano_free: true, plano_premium: true },
+      { id: 'relatorios', nome: 'Relatórios Detalhados', descricao: 'Relatórios completos com gráficos', plano_free: false, plano_premium: true },
+      { id: 'insights', nome: 'Insights Inteligentes', descricao: 'Análise automática de seus dados', plano_free: false, plano_premium: true },
+      { id: 'alertas', nome: 'Alertas Avançados', descricao: 'Alertas personalizados e priorizados', plano_free: false, plano_premium: true },
+      { id: 'precificacao', nome: 'Precificação Inteligente', descricao: 'Análise de custo por KM', plano_free: false, plano_premium: true },
+      { id: 'export', nome: 'Exportação de Dados', descricao: 'Exporte dados em PDF/Excel', plano_free: false, plano_premium: true },
+      { id: 'multiple_users', nome: 'Múltiplos Usuários', descricao: 'Gerencie vários motoristas', plano_free: false, plano_premium: true },
+    ];
+  },
+
+  hasAccess(subscription: Subscription | null, featureId: string): boolean {
+    const features = subscriptionApi.getFeatures();
+    const feature = features.find(f => f.id === featureId);
+    if (!feature) return false;
+    return subscription?.plano === 'premium' ? feature.plano_premium : feature.plano_free;
   }
 };

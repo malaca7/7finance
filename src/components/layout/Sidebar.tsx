@@ -62,14 +62,14 @@ export function Sidebar() {
       {/* Sidebar Desktop */}
       <aside
         className={clsx(
-          "hidden lg:flex fixed top-0 left-0 h-screen bg-premium-dark border-r border-white/5 flex-col z-40 transition-all duration-300 ease-in-out shrink-0 overflow-y-auto",
+          "hidden lg:flex fixed top-0 left-0 h-screen bg-premium-dark border-r border-white/5 flex-col z-40 transition-all duration-300 ease-in-out shrink-0",
           isCollapsed ? "w-20" : "w-64"
         )}
       >
         <button
           onClick={toggleSidebar}
           className={clsx(
-            "lg:absolute hidden lg:block -right-6 top-6 z-[60]",
+            "hidden lg:block absolute -right-3 top-6 z-[60]",
           )}
           title={isCollapsed ? "Abrir menu" : "Fechar menu"}
         >
