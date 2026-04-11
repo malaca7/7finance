@@ -8,12 +8,12 @@ interface CardProps {
   variant?: 'default' | 'highlight' | 'warning';
 }
 
+export function Card({ children, className, variant = 'default' }: CardProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   return (
     <div
       className={clsx(
-        // Fundo degradê escuro ou claro
         isDark
           ? 'bg-gradient-to-br from-black via-premium-darkGray to-premium-dark/90 text-white'
           : 'bg-gradient-to-br from-white via-gray-100 to-gray-200 text-black',
