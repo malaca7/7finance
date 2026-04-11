@@ -69,7 +69,7 @@ export function Sidebar() {
         <button
           onClick={toggleSidebar}
           className={clsx(
-            "absolute -right-6 top-6 z-50",
+            "lg:absolute hidden lg:block -right-6 top-6 z-[60]",
           )}
           title={isCollapsed ? "Abrir menu" : "Fechar menu"}
         >
