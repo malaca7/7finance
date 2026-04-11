@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 
 // Pages
 import { LoginPage } from './pages/Login';
+import { ResetPasswordPage } from './pages/ResetPassword';
 import { DashboardPage } from './pages/Dashboard';
 import { EarningsPage } from './pages/Earnings';
 import { ExpensesPage } from './pages/Expenses';
@@ -94,6 +95,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         
         <Route
           path="/dashboard"
