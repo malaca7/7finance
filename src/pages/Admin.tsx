@@ -62,6 +62,8 @@ export function AdminPage() {
   const [formRole, setFormRole] = useState<UserRole>('user');
   const [formPassword, setFormPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   
   // Logs filtering
   const [logSearchTerm, setLogSearchTerm] = useState('');
@@ -90,7 +92,28 @@ export function AdminPage() {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!selectedUser) return;
+    
+    setIsResettingPassword(true);
+    try {
+      const res = await usersApi.resetPassword(selectedUser.id);
+      if (res.success && res.data) {
+        setGeneratedPassword(res.data.newPassword);
+        await logsApi.create('REDEFINIR_SENHA', `Redefiniu senha do usuário "${selectedUser.nome || selectedUser.name}"`);
+        toast.success('Senha redefinida com sucesso!');
+      } else {
+        toast.error(res.error || 'Erro ao redefinir senha');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro inesperado');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   const openUserModal = (user?: User) => {
+    setGeneratedPassword(null);
     if (user) {
       setSelectedUser(user);
       setFormNome(user.nome || user.name || '');
@@ -843,20 +866,49 @@ export function AdminPage() {
               />
            </div>
            
-           {!selectedUser ? (
-             <Input 
-               label="Senha Inicial" 
-               type="password"
-               placeholder="Mínimo 6 caracteres" 
-               value={formPassword} 
-               onChange={(e) => setFormPassword(e.target.value)} 
-             />
-           ) : (
-             <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-               <p className="text-[10px] text-gray-400 mb-1">💡 Alterar senha</p>
-               <p className="text-xs text-gray-500">Para redefinir a senha, o usuário pode usar o fluxo de "Esqueci minha senha" ou você pode recriá-lo.</p>
-             </div>
-           )}
+{!selectedUser ? (
+              <Input 
+                label="Senha Inicial" 
+                type="password"
+                placeholder="Mínimo 6 caracteres" 
+                value={formPassword} 
+                onChange={(e) => setFormPassword(e.target.value)} 
+              />
+            ) : (
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  disabled={isResettingPassword}
+                  className="w-full p-3 bg-premium-darkGray/50 border border-white/10 rounded-2xl text-sm text-neutral hover:text-primary hover:border-primary/30 transition-all flex items-center justify-center gap-2"
+                >
+                  <span>🔑</span>
+                  {isResettingPassword ? 'Redefinindo...' : 'Redefinir Senha do Usuário'}
+                </button>
+                
+                {generatedPassword && (
+                  <div className="p-4 bg-primary/10 border border-primary/30 rounded-2xl">
+                    <p className="text-xs text-primary font-bold mb-2">Nova senha gerada:</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 text-lg font-mono text-white bg-premium-black p-2 rounded-lg text-center select-all">
+                        {generatedPassword}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => navigator.clipboard.writeText(generatedPassword)}
+                        className="p-2 bg-primary/20 rounded-lg text-primary hover:bg-primary/30 transition-all"
+                        title="Copiar"
+                      >
+                        📋
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-neutral mt-2">
+                      Esta senha foi salva e enviada para o email do usuário.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
            <div className="flex gap-2 pt-4">
               <Button variant="primary" className="flex-1" onClick={() => setIsUserModalOpen(false)}>Cancelar</Button>

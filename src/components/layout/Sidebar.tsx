@@ -69,11 +69,13 @@ export function Sidebar() {
         <button
           onClick={toggleSidebar}
           className={clsx(
-            "absolute -right-5 top-6 bg-primary text-black rounded-full p-1.5 shadow-glow-green hover:scale-110 transition-transform z-50 border-2 border-premium-dark",
+            "absolute -right-6 top-6 z-50",
           )}
           title={isCollapsed ? "Abrir menu" : "Fechar menu"}
         >
-          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          <div className="bg-primary text-black rounded-full p-1.5 shadow-glow-green hover:scale-110 transition-transform border-2 border-premium-dark">
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </div>
         </button>
         
         <nav className="flex-1 flex flex-col gap-1 overflow-y-auto py-6 px-2">

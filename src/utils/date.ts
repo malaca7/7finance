@@ -1,4 +1,4 @@
-﻿export function getLocalDatetimeForInput(val?: string | null): string {
+export function getLocalDatetimeForInput(val?: string | null): string {
   const d = val ? new Date(val) : new Date();
   if (isNaN(d.getTime())) return '';
   
@@ -14,13 +14,27 @@
 export function displayLocaleDatetime(dateStr: string | null | undefined): string {
   if (!dateStr) return '';
   
-  // Se a data vier do banco como "YYYY-MM-DD HH:MM:SS", o JS pode interpretar como UTC.
-  // Vamos garantir que seja tratada como string local se não houver fuso.
+  // Tratar data como string local sem conversão de fuso
   let d: Date;
-  if (typeof dateStr === 'string' && !dateStr.includes('T') && !dateStr.includes('Z')) {
-    d = new Date(dateStr.replace(' ', 'T'));
+  const dateStrClean = dateStr.replace(' ', 'T');
+  
+  // Se tem timezone info (Z ou +HH:MM), usar Date diretamente
+  // Caso contrário, tratar como local
+  if (dateStrClean.endsWith('Z') || dateStrClean.includes('+') || dateStrClean.includes('-')) {
+    d = new Date(dateStrClean);
   } else {
-    d = new Date(dateStr);
+    // Parse manual para evitar problema de fuso
+    const parts = dateStrClean.split(/[-T:]/);
+    if (parts.length >= 3) {
+      const year = parseInt(parts[0]);
+      const month = parseInt(parts[1]) - 1;
+      const day = parseInt(parts[2]);
+      const hours = parts[3] ? parseInt(parts[3]) : 0;
+      const minutes = parts[4] ? parseInt(parts[4]) : 0;
+      d = new Date(year, month, day, hours, minutes);
+    } else {
+      d = new Date(dateStrClean);
+    }
   }
 
   if (isNaN(d.getTime())) return dateStr;
@@ -31,7 +45,26 @@ export function displayLocaleDatetime(dateStr: string | null | undefined): strin
 
 export function displayLocaleDatetimeWithTime(dateStr: string | null | undefined): string {
   if (!dateStr) return '';
-  const d = new Date(dateStr); 
+  
+  const dateStrClean = dateStr.replace(' ', 'T');
+  
+  let d: Date;
+  if (dateStrClean.endsWith('Z') || dateStrClean.includes('+') || dateStrClean.includes('-')) {
+    d = new Date(dateStrClean);
+  } else {
+    const parts = dateStrClean.split(/[-T:]/);
+    if (parts.length >= 3) {
+      const year = parseInt(parts[0]);
+      const month = parseInt(parts[1]) - 1;
+      const day = parseInt(parts[2]);
+      const hours = parts[3] ? parseInt(parts[3]) : 0;
+      const minutes = parts[4] ? parseInt(parts[4]) : 0;
+      d = new Date(year, month, day, hours, minutes);
+    } else {
+      d = new Date(dateStrClean);
+    }
+  }
+  
   if (isNaN(d.getTime())) return dateStr;
   const pad = (n: number) => n.toString().padStart(2, '0');
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;

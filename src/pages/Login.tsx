@@ -13,6 +13,10 @@ export function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMessage, setForgotMessage] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
   
   // Form states
   const [telefone, setTelefone] = useState(() => localStorage.getItem('remembered_phone') || '');
@@ -66,7 +70,24 @@ export function LoginPage() {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotMessage('');
+    
+    try {
+      const response = await authApi.forgotPassword(forgotEmail);
+      if (response.success) {
+        setForgotMessage('Se o email existir, você receberá um link para redefinir sua senha.');
+      } else {
+        setForgotMessage(response.error || 'Erro ao processar solicitação');
+      }
+    } catch (err) {
+      setForgotMessage('Erro ao conectar com o servidor');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
     e.preventDefault();
     if (tipos.length === 0) {
       setError('Selecione ao menos um tipo de atuação');
@@ -121,7 +142,7 @@ export function LoginPage() {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-premium-gold/40 to-transparent" />
           
           <h2 className="text-xl font-light tracking-widest text-white mb-8 text-center uppercase">
-            {isLogin ? 'Autenticação' : 'Novo Cadastro'}
+            {showForgotPassword ? 'Recuperar Senha' : (isLogin ? 'Autenticação' : 'Novo Cadastro')}
           </h2>
           
           {error && (
@@ -130,7 +151,48 @@ export function LoginPage() {
             </div>
           )}
           
-          {isLogin ? (
+          {showForgotPassword ? (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <Input
+                label="Seu E-mail"
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder="exemplo@email.com"
+                required
+                className="bg-black/40 border-premium-gold/10 focus:border-premium-gold/40 transition-all duration-300"
+                icon={<Mail className="w-4 h-4 text-premium-gold/60" />}
+              />
+              
+              {forgotMessage && (
+                <div className={`p-4 rounded-xl text-xs text-center ${forgotMessage.includes('receber') ? 'bg-green-950/30 border border-green-500/30 text-green-400' : 'bg-red-950/30 border border-red-500/30 text-red-400'}`}>
+                  {forgotMessage}
+                </div>
+              )}
+              
+              <Button
+                type="submit"
+                variant="primary"
+                className="w-full mt-4 py-6 font-bold tracking-widest transition-all duration-500"
+                isLoading={forgotLoading}
+              >
+                ENVIAR LINK DE RECUPERAÇÃO
+              </Button>
+              
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setForgotMessage('');
+                  }}
+                  className="text-gray-400 hover:text-premium-gold text-xs tracking-widest transition-colors"
+                >
+                  Voltar para o login
+                </button>
+              </div>
+            </form>
+          ) : isLogin ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <Input
                 label="Número de Telefone"
@@ -183,6 +245,16 @@ export function LoginPage() {
               >
                 <span className="relative z-10">ENTRAR NO SISTEMA</span>
               </Button>
+              
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-gray-400 hover:text-premium-gold text-xs tracking-widest transition-colors"
+                >
+                  Esqueci minha senha
+                </button>
+              </div>
             </form>
           ) : (
             <form onSubmit={handleRegister} className="space-y-4">

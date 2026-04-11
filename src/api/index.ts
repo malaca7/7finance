@@ -169,6 +169,37 @@ export const authApi = {
       return { success: false, error: 'Erro ao buscar perfil' };
     }
   },
+
+  async forgotPassword(email: string): Promise<ApiResponse<{ message: string }>> {
+    try {
+      // Busca usuário pelo email na tabela users
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', email)
+        .single();
+
+      if (userError || !userData) {
+        // Por segurança, não revela se o email existe ou não
+        return { success: true, data: { message: 'Se o email existir, você receberá um link de recuperação.' } };
+      }
+
+      // Envia email de recuperação via Supabase Auth
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        console.error('Reset password error:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: { message: 'Se o email existir, você receberá um link de recuperação.' } };
+    } catch (err: any) {
+      console.error('Forgot password exception:', err);
+      return { success: false, error: err.message || 'Erro ao processar solicitação' };
+    }
+  },
 };
 
 export const usersApi = {
@@ -204,6 +235,57 @@ export const usersApi = {
   async delete(id: string | number) {
     const { error } = await supabase.from('users').delete().eq('id', id);
     return apiResponse<void>(null, error);
+  },
+  async resetPassword(userId: string | number): Promise<ApiResponse<{ newPassword: string }>> {
+    try {
+      // Buscar o usuário para obter o email
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('email, name, auth_id')
+        .eq('id', userId)
+        .single();
+
+      if (userError || !userData) {
+        return { success: false, error: 'Usuário não encontrado' };
+      }
+
+      if (!userData.email) {
+        return { success: false, error: 'Usuário não possui email cadastrado' };
+      }
+
+      // Gerar senha aleatória
+      const newPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase();
+      
+      // Atualizar senha no Auth do Supabase usando admin
+      const { error: authError } = await supabase.auth.admin.updateUser({
+        uid: userData.auth_id,
+        password: newPassword
+      });
+
+      if (authError) {
+        console.error('Auth update error:', authError);
+        return { success: false, error: authError.message };
+      }
+
+      // Enviar email com a nova senha usando a função do Edge Function
+      const { error: emailError } = await supabase.functions.invoke('send-reset-password-email', {
+        body: {
+          email: userData.email,
+          name: userData.name,
+          newPassword: newPassword
+        }
+      });
+
+      if (emailError) {
+        console.error('Email sending error:', emailError);
+        // Não falha a operação se o email não for enviado
+      }
+
+      return { success: true, data: { newPassword } };
+    } catch (err: any) {
+      console.error('Reset password error:', err);
+      return { success: false, error: err.message || 'Erro ao redefinir senha' };
+    }
   },
 };
 

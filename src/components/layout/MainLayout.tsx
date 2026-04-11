@@ -19,13 +19,13 @@ export function MainLayout({ children }: MainLayoutProps) {
   }, []);
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-premium-black flex flex-col lg:flex-row overflow-x-hidden max-w-[100vw] relative">
+    <div className="min-h-screen bg-premium-black flex flex-col lg:flex-row relative">
       <Sidebar />
       <main
         className={
           sidebarCollapsed
-            ? "flex-1 w-full min-w-0 p-4 lg:p-8 pt-20 pb-4 lg:pt-8 lg:pb-8 overflow-y-auto lg:ml-20"
-            : "flex-1 w-full min-w-0 p-4 lg:p-8 pt-20 pb-4 lg:pt-8 lg:pb-8 overflow-y-auto lg:ml-64"
+            ? "flex-1 w-full p-4 lg:p-8 pt-20 lg:pt-8 pb-20 lg:overflow-y-auto lg:ml-20"
+            : "flex-1 w-full p-4 lg:p-8 pt-20 lg:pt-8 pb-20 lg:overflow-y-auto lg:ml-64"
         }
       >
         <div className="max-w-7xl mx-auto">
