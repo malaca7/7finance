@@ -19,7 +19,14 @@ async function getMyUserId(): Promise<string | null> {
   if (_cachedUserId) return _cachedUserId;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
+  // Try with normal client first, fallback to admin client if RLS blocks
+  let { data } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle();
+  if (!data) {
+    const { createAdminClient } = await import('./supabase');
+    const admin = await createAdminClient();
+    const res = await admin.from('users').select('id').eq('auth_id', user.id).maybeSingle();
+    data = res.data;
+  }
   _cachedUserId = data?.id || null;
   return _cachedUserId;
 }

@@ -8,7 +8,12 @@ async function getMyUserId(): Promise<string | null> {
   if (_cachedUserId) return _cachedUserId;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
+  let { data } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle();
+  if (!data) {
+    const admin = await createAdminClient();
+    const res = await admin.from('users').select('id').eq('auth_id', user.id).maybeSingle();
+    data = res.data;
+  }
   _cachedUserId = data?.id || null;
   return _cachedUserId;
 }
