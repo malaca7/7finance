@@ -63,8 +63,12 @@ export const authApi = {
     try {
       const cleanPhone = telefone.replace(/\D/g, '');
       
+      // Usa admin client para buscar email (bypass RLS — usuário não autenticado ainda)
+      const { createAdminClient } = await import('./supabase');
+      const adminClient = await createAdminClient();
+      
       // 1) Busca o email real do usuário na tabela users pelo telefone
-      const { data: userRow } = await supabase
+      const { data: userRow } = await adminClient
         .from('users')
         .select('email, auth_id')
         .eq('phone', cleanPhone)
