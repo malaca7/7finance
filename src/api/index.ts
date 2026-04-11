@@ -295,7 +295,7 @@ export const usersApi = {
     try {
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('email, name, auth_id')
+        .select('email, name, phone, auth_id')
         .eq('id', userId)
         .single();
 
@@ -307,19 +307,25 @@ export const usersApi = {
         return { success: false, error: 'Usuário não possui auth_id' };
       }
 
-      const newPassword = customPassword || Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase();
+      const newPassword = customPassword || Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase() + '!';
 
-      if (!customPassword && userData.email) {
-        await supabase.auth.resetPasswordForEmail(userData.email, {
-          redirectTo: `${window.location.origin}/reset-password`,
-        });
+      // Usar admin client para alterar senha no Supabase Auth
+      const { createAdminClient } = await import('./supabase');
+      const supabaseAdmin = await createAdminClient();
+
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userData.auth_id, {
+        password: newPassword
+      });
+
+      if (updateError) {
+        return { success: false, error: updateError.message || 'Erro ao alterar senha no auth' };
       }
 
       return {
         success: true,
         data: {
           newPassword,
-          email: userData.email || '',
+          email: userData.email || userData.phone || '',
           name: userData.name || 'Usuário'
         }
       };

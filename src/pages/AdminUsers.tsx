@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { 
   Users, Search, Plus, Edit2, Trash2, Activity, DollarSign, History, Zap,
-  Key, Crown
+  Key, Crown, Eye, EyeOff
 } from 'lucide-react';
 import { Card, CardHeader, Button, Input, Select, Modal, ConfirmModal } from '../components/ui';
 import { MainLayout } from '../components/layout/MainLayout';
@@ -40,6 +40,7 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState<{ password: string; email: string; name: string } | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, string>>({});
 
   const [formNome, setFormNome] = useState('');
   const [formEmail, setFormEmail] = useState('');
@@ -350,6 +351,7 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                   <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Perfil</th>
                   <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
                   <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Plano</th>
+                  <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Senha</th>
                   <th className="text-left p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Cadastro</th>
                   <th className="text-right p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Ações</th>
                 </tr>
@@ -357,7 +359,7 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
               <tbody className="divide-y divide-premium-gray/20">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-gray-500">Nenhum usuário encontrado</td>
+                    <td colSpan={8} className="p-8 text-center text-gray-500">Nenhum usuário encontrado</td>
                   </tr>
                 ) : (
                   filteredUsers.map(user => (
@@ -409,6 +411,38 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
                           <option value="pro">Pro</option>
                           <option value="premium">Premium</option>
                         </select>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-1.5">
+                          <code className="text-xs font-mono text-gray-400 bg-premium-black px-2 py-1 rounded min-w-[80px] text-center">
+                            {visiblePasswords[user.id] || '••••••••'}
+                          </code>
+                          {visiblePasswords[user.id] ? (
+                            <button
+                              onClick={() => setVisiblePasswords(prev => { const n = {...prev}; delete n[user.id]; return n; })}
+                              className="p-1.5 rounded-lg text-neutral hover:text-white hover:bg-white/5 transition-all"
+                              title="Ocultar senha"
+                            >
+                              <EyeOff className="w-3.5 h-3.5" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                const res = await usersApi.resetPassword(user.id);
+                                if (res.success && res.data) {
+                                  setVisiblePasswords(prev => ({...prev, [user.id]: res.data!.newPassword}));
+                                  toast.success('Nova senha gerada');
+                                } else {
+                                  toast.error(res.error || 'Erro ao gerar senha');
+                                }
+                              }}
+                              className="p-1.5 rounded-lg text-neutral hover:text-primary hover:bg-primary/10 transition-all"
+                              title="Gerar e visualizar nova senha"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4">
                         <p className="text-xs text-gray-500">{user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '-'}</p>
