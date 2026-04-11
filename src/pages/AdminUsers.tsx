@@ -668,9 +668,6 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
           </div>
         </Modal>
 
-        {/* Password Reset 
-        </Modal>
-
         {/* Password Reset Modal */}
         {generatedPassword && (
           <Modal
