@@ -317,15 +317,8 @@ export function ExpensesPage() {
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Descrição</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Data</th>
                       <th className="text-right py-3 px-4 text-sm font-medium text-gray-400">Ações</th>
-                    <Button 
-                      onClick={() => openModal()} 
-                      variant="primary"
-                      className="h-14 px-6 flex items-center gap-2 group font-bold text-lg"
-                    >
-                      <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-                      <span>NOVA DESPESA</span>
-                    </Button>
-                  </div>
+                    </tr>
+                  </thead>
                         <td className="py-3 px-4 text-gray-400">
                           {displayLocaleDatetime(expense.data)}
                         </td>
