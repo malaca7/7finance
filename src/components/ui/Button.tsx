@@ -1,5 +1,6 @@
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { clsx } from 'clsx';
+import { useTheme } from '../ThemeContext';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'danger';
@@ -9,18 +10,25 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props }, ref) => {
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
     return (
       <button
         ref={ref}
         disabled={disabled || isLoading}
         className={clsx(
-          'inline-flex items-center justify-center font-bold transition-all duration-200 rounded-full shadow-[0_2px_16px_0_rgba(198,255,0,0.10)]',
-          'focus:outline-none focus:ring-2 focus:ring-premium-limao focus:ring-offset-2 focus:ring-offset-premium-black',
+          'inline-flex items-center justify-center font-bold transition-all duration-200 rounded-full',
+          'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           {
-            'bg-premium-limao text-premium-black hover:bg-premium-limaoLight hover:shadow-[0_0_32px_0_rgba(198,255,0,0.25)]': variant === 'primary',
-            'bg-premium-gray text-white hover:bg-premium-darkGray': variant === 'secondary',
-            'border-2 border-primary text-primary hover:bg-primary hover:text-white': variant === 'outline',
+            // Tema escuro: fundo verde neon, texto preto/branco
+            'bg-primary text-black hover:bg-accent hover:shadow-[0_0_32px_0_rgba(57,255,20,0.25)]': variant === 'primary' && isDark,
+            'bg-premium-gray text-white hover:bg-premium-darkGray': variant === 'secondary' && isDark,
+            'border-2 border-primary text-primary hover:bg-primary hover:text-white': variant === 'outline' && isDark,
+            // Tema claro: fundo verde neon, texto preto/branco
+            'bg-primary text-black hover:bg-accent hover:shadow-[0_0_32px_0_rgba(57,255,20,0.25)]': variant === 'primary' && !isDark,
+            'bg-white text-primary hover:bg-gray-100': variant === 'secondary' && !isDark,
+            'border-2 border-primary text-primary hover:bg-primary hover:text-white': variant === 'outline' && !isDark,
             'bg-red-600 text-white hover:bg-red-700': variant === 'danger',
             'px-4 py-2 text-base': size === 'sm',
             'px-6 py-3 text-lg': size === 'md',

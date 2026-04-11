@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { clsx } from 'clsx';
+import { useTheme } from '../ThemeContext';
 
 interface CardProps {
   children: ReactNode;
@@ -7,14 +8,20 @@ interface CardProps {
   variant?: 'default' | 'highlight' | 'warning';
 }
 
-export function Card({ children, className, variant = 'default' }: CardProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   return (
     <div
       className={clsx(
-        'bg-premium-dark/90 backdrop-blur-md rounded-2xl p-6 shadow-[0_2px_24px_0_rgba(0,0,0,0.20)]',
-        'border border-premium-gray/40',
+        // Fundo degradê escuro ou claro
+        isDark
+          ? 'bg-gradient-to-br from-black via-premium-darkGray to-premium-dark/90 text-white'
+          : 'bg-gradient-to-br from-white via-gray-100 to-gray-200 text-black',
+        'backdrop-blur-md rounded-2xl p-6 shadow-[0_2px_24px_0_rgba(0,0,0,0.20)]',
+        'border',
+        isDark ? 'border-premium-gray/40' : 'border-gray-200',
         {
-          'border-primary/80 shadow-[0_0_32px_0_rgba(111,76,255,0.25)]': variant === 'highlight',
+          'border-primary/80 shadow-[0_0_32px_0_rgba(57,255,20,0.25)]': variant === 'highlight',
           'border-red-500/50': variant === 'warning',
         },
         className
