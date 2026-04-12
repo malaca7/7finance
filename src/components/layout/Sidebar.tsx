@@ -29,6 +29,7 @@ type MenuItem = {
   path: string;
   label: string;
   icon: React.ElementType;
+  disabled?: boolean;
 };
 
 type MenuCategory = {
@@ -43,7 +44,7 @@ const personalCategories: MenuCategory[] = [
     icon: User,
     items: [
       { path: '/dashboard', label: 'Início', icon: LayoutDashboard },
-      { path: '/planos', label: 'Planos', icon: Crown },
+      { path: '/planos', label: 'Planos', icon: Crown, disabled: true },
     ],
   },
   {
@@ -143,6 +144,24 @@ export function Sidebar() {
 
   const renderMenuItem = (item: MenuItem, isActive: boolean, customActiveClass?: string) => {
     const Icon = item.icon;
+
+    if (item.disabled) {
+      return (
+        <div
+          key={item.path}
+          className="flex items-center gap-3 rounded-2xl px-4 py-3 opacity-40 cursor-not-allowed font-semibold text-neutral"
+          title="Em breve"
+        >
+          <Icon className="w-7 h-7 shrink-0" />
+          {!isCollapsed && (
+            <span className="text-lg font-semibold leading-none truncate flex items-center gap-2">
+              {item.label}
+              <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider">Em breve</span>
+            </span>
+          )}
+        </div>
+      );
+    }
 
     return (
       <Link
@@ -270,6 +289,19 @@ export function Sidebar() {
                     {personalCategories[mobileCategory].items.map((item) => {
                       const isActive = location.pathname === item.path;
                       const Icon = item.icon;
+
+                      if (item.disabled) {
+                        return (
+                          <div
+                            key={item.path}
+                            className="flex flex-col items-center justify-center flex-1 py-2.5 gap-1 rounded-xl opacity-40 cursor-not-allowed text-neutral"
+                          >
+                            <Icon className="w-5 h-5" />
+                            <span className="text-[10px] truncate max-w-[70px] text-neutral">Em breve</span>
+                          </div>
+                        );
+                      }
+
                       return (
                         <Link
                           key={item.path}

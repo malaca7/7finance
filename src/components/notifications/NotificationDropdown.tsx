@@ -70,7 +70,7 @@ export function NotificationDropdown() {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-[340px] sm:w-[380px] max-h-[480px] bg-premium-dark/98 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden animate-fade-in z-50">
+        <div className="absolute right-0 top-full mt-2 w-[340px] sm:w-[380px] max-h-[480px] bg-[#0f1117] border border-white/10 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden animate-fade-in z-50">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
             <div className="flex items-center gap-2">

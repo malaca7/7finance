@@ -97,6 +97,19 @@ export function TopBar() {
                 <div className="py-1">
                   {adminMenuItems.map((item) => {
                     const Icon = item.icon;
+                    if (item.disabled) {
+                      return (
+                        <div
+                          key={item.path}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral/40 cursor-not-allowed"
+                          title="Em breve"
+                        >
+                          <Icon className="w-4 h-4" />
+                          {item.label}
+                          <span className="ml-auto text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider">Em breve</span>
+                        </div>
+                      );
+                    }
                     return (
                       <button
                         key={item.path}
