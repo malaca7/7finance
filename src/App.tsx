@@ -220,9 +220,9 @@ function App() {
         <Route
           path="/planos"
           element={
-            <ProtectedRoute>
+            <AdminRoute>
               <PlansPage />
-            </ProtectedRoute>
+            </AdminRoute>
           }
         />
 
