@@ -42,6 +42,21 @@ async function getMyUserId(): Promise<string | null> {
 // Limpa cache ao trocar sessão
 supabase.auth.onAuthStateChange(() => { _cachedUserId = null; });
 
+// Fire-and-forget audit log helper
+function logAction(action: string, entity: string, entityId?: string) {
+  (async () => {
+    try {
+      const userId = await getMyUserId();
+      const insertData: any = { action, entity, metadata: { action, descricao: entity } };
+      if (userId) insertData.user_id = userId;
+      if (entityId) insertData.entity_id = entityId;
+      await supabase.from('audit_logs').insert(insertData);
+    } catch (e) {
+      // silently ignore logging errors
+    }
+  })();
+}
+
 // Calcula data início baseado no filtro
 function getFilterStartDate(filter?: DateFilter): string | null {
   if (!filter || filter === 'personalizado') return null;
@@ -130,6 +145,8 @@ export const authApi = {
         };
       }
 
+      logAction('LOGIN', `Login: ${userData.name || userData.email}`, userData.id);
+
       return {
         success: true,
         data: { user: adaptUser(userData), token: authData.session.access_token },
@@ -194,6 +211,8 @@ export const authApi = {
         .single();
 
       if (profileError) return { success: false, error: profileError.message };
+
+      logAction('REGISTRO', `Novo cadastro: ${userData.nome} (${cleanPhone})`, profile?.id);
 
       return {
         success: true,
@@ -292,6 +311,8 @@ export const usersApi = {
 
     const { data: result, error } = await supabase.from('users').update(mapped).eq('id', id).select().single();
     if (error) return apiResponse<User>(null, error);
+    const changedFields = Object.keys(mapped).filter(k => k !== 'avatar_url').join(', ');
+    if (changedFields) logAction('ALTERAR_PERFIL', `Atualizou perfil: ${changedFields}`, String(id));
     return { success: true, data: adaptUser(result) };
   },
   async delete(id: string | number) {
@@ -368,14 +389,17 @@ export const veiculosApi = {
       return { success: false, error: 'Não foi possível identificar o usuário. Faça login novamente.' };
     }
     const { data: result, error } = await supabase.from('veiculos').insert({ ...data, usuario_id: userId }).select().single();
+    if (!error) logAction('CRIAR_REGISTRO', `Adicionou veículo: ${data.modelo || ''} ${data.placa || ''}`, String(result?.id));
     return apiResponse<any>(result, error);
   },
   async update(id: number, data: any) { 
     const { data: result, error } = await supabase.from('veiculos').update(data).eq('id', id).select().single();
+    if (!error) logAction('EDITAR_REGISTRO', `Editou veículo: ${data.modelo || ''} ${data.placa || ''}`, String(id));
     return apiResponse<any>(result, error);
   },
   async delete(id: number) { 
     const { error } = await supabase.from('veiculos').delete().eq('id', id);
+    if (!error) logAction('EXCLUIR_REGISTRO', `Excluiu veículo ID ${id}`, String(id));
     return apiResponse<void>(null, error);
   },
 };
@@ -388,14 +412,17 @@ export const kmApi = {
   async create(data: any) { 
     const userId = await getMyUserId();
     const { data: result, error } = await supabase.from('km_registry').insert({ ...data, usuario_id: userId }).select().single();
+    if (!error) logAction('CRIAR_REGISTRO', `Registrou KM: ${data.km_atual || ''} km`, String(result?.id));
     return apiResponse<KmRegistry>(result, error);
   },
   async update(id: number, data: any) { 
     const { data: result, error } = await supabase.from('km_registry').update(data).eq('id', id).select().single();
+    if (!error) logAction('EDITAR_REGISTRO', `Editou registro KM ID ${id}`, String(id));
     return apiResponse<KmRegistry>(result, error);
   },
   async delete(id: number) { 
     const { error } = await supabase.from('km_registry').delete().eq('id', id);
+    if (!error) logAction('EXCLUIR_REGISTRO', `Excluiu registro KM ID ${id}`, String(id));
     return apiResponse<void>(null, error);
   },
 };
@@ -411,14 +438,17 @@ export const earningsApi = {
   async create(data: any) { 
     const userId = await getMyUserId();
     const { data: result, error } = await supabase.from('earnings').insert({ ...data, usuario_id: userId }).select().single();
+    if (!error) logAction('CRIAR_REGISTRO', `Adicionou ganho: R$ ${data.valor || 0} - ${data.plataforma || data.descricao || ''}`, String(result?.id));
     return apiResponse<Earnings>(result, error);
   },
   async update(id: number, data: any) { 
     const { data: result, error } = await supabase.from('earnings').update(data).eq('id', id).select().single();
+    if (!error) logAction('EDITAR_REGISTRO', `Editou ganho ID ${id}: R$ ${data.valor || ''}`, String(id));
     return apiResponse<Earnings>(result, error);
   },
   async delete(id: number) { 
     const { error } = await supabase.from('earnings').delete().eq('id', id);
+    if (!error) logAction('EXCLUIR_REGISTRO', `Excluiu ganho ID ${id}`, String(id));
     return apiResponse<void>(null, error);
   },
 };
@@ -434,14 +464,17 @@ export const expensesApi = {
   async create(data: any) { 
     const userId = await getMyUserId();
     const { data: result, error } = await supabase.from('expenses').insert({ ...data, usuario_id: userId }).select().single();
+    if (!error) logAction('CRIAR_REGISTRO', `Adicionou despesa: R$ ${data.valor || 0} - ${data.categoria || data.descricao || ''}`, String(result?.id));
     return apiResponse<Expense>(result, error);
   },
   async update(id: number, data: any) { 
     const { data: result, error } = await supabase.from('expenses').update(data).eq('id', id).select().single();
+    if (!error) logAction('EDITAR_REGISTRO', `Editou despesa ID ${id}: R$ ${data.valor || ''}`, String(id));
     return apiResponse<Expense>(result, error);
   },
   async delete(id: number) { 
     const { error } = await supabase.from('expenses').delete().eq('id', id);
+    if (!error) logAction('EXCLUIR_REGISTRO', `Excluiu despesa ID ${id}`, String(id));
     return apiResponse<void>(null, error);
   },
 };
@@ -454,14 +487,17 @@ export const maintenanceApi = {
   async create(data: any) { 
     const userId = await getMyUserId();
     const { data: result, error } = await supabase.from('maintenance').insert({ ...data, usuario_id: userId }).select('*, veiculos(id, modelo, placa)').single();
+    if (!error) logAction('CRIAR_REGISTRO', `Adicionou manutenção: ${data.tipo || data.descricao || ''} - R$ ${data.valor || 0}`, String(result?.id));
     return apiResponse<Maintenance>(result, error);
   },
   async update(id: number, data: any) { 
     const { data: result, error } = await supabase.from('maintenance').update(data).eq('id', id).select('*, veiculos(id, modelo, placa)').single();
+    if (!error) logAction('EDITAR_REGISTRO', `Editou manutenção ID ${id}: ${data.tipo || data.descricao || ''}`, String(id));
     return apiResponse<Maintenance>(result, error);
   },
   async delete(id: number) { 
     const { error } = await supabase.from('maintenance').delete().eq('id', id);
+    if (!error) logAction('EXCLUIR_REGISTRO', `Excluiu manutenção ID ${id}`, String(id));
     return apiResponse<void>(null, error);
   },
 };
@@ -696,6 +732,7 @@ export const logsApi = {
       { value: 'all', label: 'Todas Ações' },
       { value: 'LOGIN', label: 'Login' },
       { value: 'LOGOUT', label: 'Logout' },
+      { value: 'REGISTRO', label: 'Cadastro' },
       { value: 'CRIAR_REGISTRO', label: 'Criar Registro' },
       { value: 'EDITAR_REGISTRO', label: 'Editar Registro' },
       { value: 'EXCLUIR_REGISTRO', label: 'Excluir Registro' },
@@ -705,6 +742,7 @@ export const logsApi = {
       { value: 'REDEFINIR_SENHA', label: 'Redefinir Senha' },
       { value: 'EXPORTAR', label: 'Exportar' },
       { value: 'ALTERAR_PERFIL', label: 'Alterar Perfil' },
+      { value: 'ALTERAR_PLANO', label: 'Alterar Plano' },
     ];
   }
 };

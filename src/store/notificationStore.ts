@@ -40,6 +40,7 @@ interface NotificationState {
   notifications: Notification[];
   readIds: Set<string>;
   userId: string | null;
+  userCreatedAt: string | null;
   isLoading: boolean;
   soundEnabled: boolean;
 
@@ -47,8 +48,9 @@ interface NotificationState {
   unreadCount: () => number;
 
   // Actions
-  init: (userId: string) => void;
+  init: (userId: string, userCreatedAt?: string) => void;
   fetchNotifications: () => Promise<void>;
+  syncReadIds: () => Promise<void>;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   toggleSound: () => void;
@@ -65,6 +67,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
   readIds: new Set<string>(),
   userId: null,
+  userCreatedAt: null,
   isLoading: false,
   soundEnabled: localStorage.getItem('notif_sound') !== 'off',
 
@@ -73,10 +76,13 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     return notifications.filter(n => !readIds.has(n.id)).length;
   },
 
-  init: (userId: string) => {
-    const readIds = getReadIds(userId);
-    set({ userId, readIds });
+  init: (userId: string, userCreatedAt?: string) => {
+    // Start with localStorage reads for instant UI, then merge DB reads
+    const localReadIds = getReadIds(userId);
+    set({ userId, userCreatedAt: userCreatedAt || null, readIds: localReadIds });
     get().fetchNotifications();
+    // Also fetch reads from DB and merge
+    get().syncReadIds();
 
     // Subscribe to realtime
     if (realtimeSub) {
@@ -125,18 +131,42 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       .subscribe();
   },
 
+  syncReadIds: async () => {
+    const { userId, readIds } = get();
+    if (!userId) return;
+    try {
+      const { data } = await supabase
+        .from('notification_reads')
+        .select('notification_id')
+        .eq('user_id', userId);
+      if (data && data.length > 0) {
+        const merged = new Set(readIds);
+        data.forEach((r: any) => merged.add(r.notification_id));
+        saveReadIds(userId, merged);
+        set({ readIds: merged });
+      }
+    } catch {}
+  },
+
   fetchNotifications: async () => {
-    const { userId } = get();
+    const { userId, userCreatedAt } = get();
     if (!userId) return;
 
     set({ isLoading: true });
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('notificacoes')
         .select('*')
         .or(`target_type.eq.all,target_id.eq.${userId}`)
         .order('criada_em', { ascending: false })
         .limit(50);
+
+      // Only show notifications from after user registration
+      if (userCreatedAt) {
+        query = query.gte('criada_em', userCreatedAt);
+      }
+
+      const { data, error } = await query;
 
       if (!error && data) {
         set({ notifications: data });
@@ -155,15 +185,29 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     newReadIds.add(id);
     saveReadIds(userId, newReadIds);
     set({ readIds: newReadIds });
+    // Persist to DB (fire-and-forget)
+    supabase.from('notification_reads').upsert(
+      { notification_id: id, user_id: userId },
+      { onConflict: 'notification_id,user_id' }
+    ).then(() => {});
   },
 
   markAllAsRead: () => {
     const { userId, notifications, readIds } = get();
     if (!userId) return;
     const newReadIds = new Set(readIds);
+    const newIds = notifications.filter(n => !readIds.has(n.id)).map(n => n.id);
     notifications.forEach(n => newReadIds.add(n.id));
     saveReadIds(userId, newReadIds);
     set({ readIds: newReadIds });
+    // Persist to DB (fire-and-forget)
+    if (newIds.length > 0) {
+      const rows = newIds.map(nid => ({ notification_id: nid, user_id: userId }));
+      supabase.from('notification_reads').upsert(
+        rows,
+        { onConflict: 'notification_id,user_id' }
+      ).then(() => {});
+    }
   },
 
   toggleSound: () => {
@@ -178,7 +222,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       supabase.removeChannel(realtimeSub);
       realtimeSub = null;
     }
-    set({ notifications: [], userId: null, readIds: new Set() });
+    set({ notifications: [], userId: null, userCreatedAt: null, readIds: new Set() });
   },
 
   sendNotification: async ({ titulo, mensagem, tipo, targetType, targetId }) => {

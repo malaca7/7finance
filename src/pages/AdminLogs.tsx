@@ -59,11 +59,13 @@ export function AdminLogsPage() {
     'EXPORTAR': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     'LOGIN': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
     'LOGOUT': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    'REGISTRO': 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
     'CRIAR_REGISTRO': 'bg-green-500/20 text-green-400',
     'EDITAR_REGISTRO': 'bg-yellow-500/20 text-yellow-400',
     'EXCLUIR_REGISTRO': 'bg-red-500/20 text-red-400',
     'REDEFINIR_SENHA': 'bg-cyan-500/20 text-cyan-400',
     'ALTERAR_PERFIL': 'bg-pink-500/20 text-pink-400',
+    'ALTERAR_PLANO': 'bg-amber-500/20 text-amber-400',
   };
 
   const actionLabels: Record<string, string> = {
@@ -73,11 +75,13 @@ export function AdminLogsPage() {
     'EXPORTAR': 'Exportação',
     'LOGIN': 'Login',
     'LOGOUT': 'Logout',
+    'REGISTRO': 'Cadastro',
     'CRIAR_REGISTRO': 'Criar Registro',
     'EDITAR_REGISTRO': 'Editar Registro',
     'EXCLUIR_REGISTRO': 'Excluir Registro',
     'REDEFINIR_SENHA': 'Redefinir Senha',
     'ALTERAR_PERFIL': 'Alterar Perfil',
+    'ALTERAR_PLANO': 'Alterar Plano',
   };
 
   const getActionIcon = (action: string) => {
@@ -142,6 +146,7 @@ export function AdminLogsPage() {
               <option value="all">Todas Ações</option>
               <option value="LOGIN">Login</option>
               <option value="LOGOUT">Logout</option>
+              <option value="REGISTRO">Cadastro</option>
               <option value="CRIAR_REGISTRO">Criar Registro</option>
               <option value="EDITAR_REGISTRO">Editar Registro</option>
               <option value="EXCLUIR_REGISTRO">Excluir Registro</option>
@@ -151,6 +156,7 @@ export function AdminLogsPage() {
               <option value="REDEFINIR_SENHA">Redefinir Senha</option>
               <option value="EXPORTAR">Exportar</option>
               <option value="ALTERAR_PERFIL">Alterar Perfil</option>
+              <option value="ALTERAR_PLANO">Alterar Plano</option>
             </select>
           </div>
           

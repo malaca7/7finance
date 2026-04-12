@@ -120,7 +120,7 @@ function App() {
   useEffect(() => {
     if (user?.id) {
       fetchUserPlan();
-      initNotifications(user.id);
+      initNotifications(user.id, user.created_at);
       return () => cleanupNotifications();
     }
   }, [user?.id]);

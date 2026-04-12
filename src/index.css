@@ -36,6 +36,110 @@ html.light {
   --scrollbar-thumb: #D1D5DB;
 }
 
+/* ===== LIGHT THEME OVERRIDES ===== */
+
+/* Text colors: white text becomes dark (except on colored bg elements) */
+html.light .text-white:not([class*="bg-primary"]):not([class*="bg-secondary"]):not([class*="bg-negative"]):not([class*="bg-gradient"]):not([class*="bg-red"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-amber"]):not(.btn-premium) {
+  color: #111827 !important;
+}
+html.light .text-gray-300 { color: #374151 !important; }
+html.light .text-gray-400 { color: #4B5563 !important; }
+html.light .text-gray-500 { color: #6B7280 !important; }
+html.light .text-gray-600 { color: #4B5563 !important; }
+
+/* Hover text */
+html.light .hover\:text-white:hover { color: #111827 !important; }
+html.light .hover\:text-primary:hover { color: #16A34A !important; }
+
+/* Borders: white-based → dark-based */
+html.light .border-white\/3 { border-color: rgba(0,0,0,0.06) !important; }
+html.light .border-white\/5 { border-color: rgba(0,0,0,0.08) !important; }
+html.light .border-white\/10 { border-color: rgba(0,0,0,0.1) !important; }
+html.light .border-white\/20 { border-color: rgba(0,0,0,0.12) !important; }
+html.light .border-white\/\[0\.03\] { border-color: rgba(0,0,0,0.04) !important; }
+
+/* Background overlays */
+html.light .bg-white\/5 { background-color: rgba(0,0,0,0.03) !important; }
+html.light .bg-white\/10 { background-color: rgba(0,0,0,0.05) !important; }
+html.light .hover\:bg-white\/5:hover { background-color: rgba(0,0,0,0.05) !important; }
+html.light .hover\:bg-white\/10:hover { background-color: rgba(0,0,0,0.08) !important; }
+html.light .hover\:bg-white\/\[0\.02\]:hover { background-color: rgba(0,0,0,0.02) !important; }
+html.light .bg-black\/40 { background-color: rgba(0,0,0,0.25) !important; }
+
+/* Hardcoded dark backgrounds → light */
+html.light .bg-\[\#0f1117\] { background-color: #FFFFFF !important; }
+html.light .bg-\[\#111827\] { background-color: #FFFFFF !important; }
+html.light .bg-\[\#1F2937\] { background-color: #F9FAFB !important; }
+
+/* Fix premium/card classes */
+html.light .card-premium {
+  background: #FFFFFF;
+  border-color: rgba(34,197,94,0.15);
+}
+html.light .bg-card-premium {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%) !important;
+}
+html.light .input-premium {
+  background: #F9FAFB;
+  border-color: #E5E7EB;
+  color: #111827;
+}
+html.light .tx-pill {
+  background: #F3F4F6;
+}
+
+/* Shadows */
+html.light .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15) !important; }
+html.light .shadow-\[0_20px_60px_rgba\(0\,0\,0\,0\.8\)\] {
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12) !important;
+}
+html.light .shadow-\[0_0_12px_rgba\(57\,255\,20\,0\.5\)\] {
+  box-shadow: 0 0 8px rgba(34,197,94,0.4) !important;
+}
+
+/* Dividers */
+html.light .divide-premium-gray\/20 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(0,0,0,0.06);
+}
+html.light .divide-premium-gray\/30 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(0,0,0,0.08);
+}
+
+/* Opacity/muted text */
+html.light .text-neutral\/60 { color: rgba(75,85,99,0.7) !important; }
+html.light .text-neutral\/70 { color: rgba(75,85,99,0.8) !important; }
+html.light .opacity-20 { opacity: 0.15 !important; }
+
+/* Placeholder */
+html.light ::placeholder { color: #9CA3AF !important; }
+
+/* Amber/admin colors - make more visible on light */
+html.light .text-amber-400 { color: #B45309 !important; }
+html.light .text-amber-300 { color: #92400E !important; }
+html.light .hover\:text-amber-400:hover { color: #B45309 !important; }
+html.light .hover\:text-amber-300:hover { color: #92400E !important; }
+html.light .border-amber-500\/20 { border-color: rgba(180,83,9,0.2) !important; }
+html.light .bg-amber-500\/20 { background-color: rgba(180,83,9,0.08) !important; }
+html.light .hover\:bg-amber-500\/5:hover { background-color: rgba(180,83,9,0.05) !important; }
+
+/* Select/input backgrounds */
+html.light select,
+html.light input[type="text"],
+html.light input[type="date"],
+html.light input[type="number"],
+html.light input[type="password"],
+html.light input[type="email"],
+html.light input[type="tel"],
+html.light textarea {
+  background-color: #F9FAFB !important;
+  border-color: #D1D5DB !important;
+  color: #111827 !important;
+}
+html.light select option {
+  background-color: #FFFFFF;
+  color: #111827;
+}
+
 * {
   margin: 0;
   padding: 0;

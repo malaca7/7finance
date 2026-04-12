@@ -23,7 +23,7 @@ import {
 import { MainLayout } from '../components/layout/MainLayout';
 import { Card, Button, Input, Select, Modal } from '../components/ui';
 import { useAppStore } from '../store';
-import { usersApi } from '../api';
+import { usersApi, logsApi } from '../api';
 import { supabase } from '../api/supabase';
 import { PlanBadge } from '../components/plans';
 import { usePlanAccess } from '../hooks/usePlanAccess';
@@ -615,6 +615,7 @@ export function ProfilePage() {
                       toast.error(error.message || 'Erro ao alterar senha');
                     } else {
                       toast.success('Senha alterada com sucesso!');
+                      logsApi.create('ALTERAR_PERFIL', 'Alterou a senha');
                       setSenhaAtual('');
                       setNovaSenha('');
                       setConfirmSenha('');

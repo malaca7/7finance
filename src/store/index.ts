@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User, Earnings, Expense, KmRegistry, Maintenance, DashboardSummary, EarningsType, ExpenseType, DateFilter } from '../types';
+import { logsApi } from '../api';
 
 interface AppState {
   // Auth
@@ -102,6 +103,10 @@ export const useAppStore = create<AppState>()(
       },
       
       logout: () => {
+        const currentUser = get().user;
+        if (currentUser) {
+          logsApi.create('LOGOUT', `Logout: ${currentUser.name || currentUser.nome || currentUser.email || 'Usuário'}`);
+        }
         localStorage.removeItem('malaca_token');
         localStorage.removeItem('malaca_user');
         set({
