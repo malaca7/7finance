@@ -405,8 +405,11 @@ export const veiculosApi = {
 };
 
 export const kmApi = {
-  async getAll() { 
-    const { data, error } = await supabase.from('km_registry').select('*, veiculos(id, modelo, placa)').order('data', { ascending: false });
+  async getAll(filter?: DateFilter) { 
+    let query = supabase.from('km_registry').select('*, veiculos(id, modelo, placa)').order('data', { ascending: false });
+    const startDate = getFilterStartDate(filter);
+    if (startDate) query = query.gte('data', startDate);
+    const { data, error } = await query;
     return apiResponse<KmRegistry[]>(data, error);
   },
   async create(data: any) { 
@@ -480,8 +483,11 @@ export const expensesApi = {
 };
 
 export const maintenanceApi = {
-  async getAll() { 
-    const { data, error } = await supabase.from('maintenance').select('*, veiculos(id, modelo, placa)').order('data', { ascending: false });
+  async getAll(filter?: DateFilter) { 
+    let query = supabase.from('maintenance').select('*, veiculos(id, modelo, placa)').order('data', { ascending: false });
+    const startDate = getFilterStartDate(filter);
+    if (startDate) query = query.gte('data', startDate);
+    const { data, error } = await query;
     return apiResponse<Maintenance[]>(data, error);
   },
   async create(data: any) { 

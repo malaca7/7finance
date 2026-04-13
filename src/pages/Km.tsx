@@ -5,12 +5,18 @@ import { Card, CardHeader, Button, Input, Modal, ConfirmModal, Select } from '..
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAppStore } from '../store';
 import { kmApi, veiculosApi } from '../api';
-import type { KmRegistry } from '../types';
+import type { KmRegistry, DateFilter } from '../types';
 import { getLocalDatetimeForInput, displayLocaleDatetime } from '../utils/date';
 import toast from 'react-hot-toast';
 
+const filterOptions = [
+  { value: 'diario', label: 'Hoje' },
+  { value: 'semanal', label: 'Esta Semana' },
+  { value: 'mensal', label: 'Este Mês' },
+];
+
 export function KmPage() {
-  const { kmRegistries, addKmRegistry, updateKmRegistry, deleteKmRegistry, setKmRegistries, user } = useAppStore();
+  const { kmRegistries, addKmRegistry, updateKmRegistry, deleteKmRegistry, setKmRegistries, user, dateFilter, setDateFilter } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -33,7 +39,7 @@ export function KmPage() {
   useEffect(() => {
     loadKmRegistries();
     fetchVeiculos();
-  }, []);
+  }, [dateFilter]);
 
   const fetchVeiculos = async () => {
     const response = await veiculosApi.getAll();
@@ -49,7 +55,7 @@ export function KmPage() {
   const loadKmRegistries = async () => {
     setIsLoading(true);
     try {
-      const response = await kmApi.getAll();
+      const response = await kmApi.getAll(dateFilter);
       if (response.success && response.data) {
         setKmRegistries(response.data);
       }
@@ -306,6 +312,12 @@ export function KmPage() {
             <h1 className="text-xl font-bold text-white">Quilometragem</h1>
             <p className="text-sm text-gray-400">Controle de KM por veículo</p>
           </div>
+          <Select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value as DateFilter)}
+            options={filterOptions}
+            className="w-36"
+          />
           {veiculos.length > 0 && (
             <select
               value={selectedVeiculoId}

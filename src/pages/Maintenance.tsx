@@ -4,8 +4,14 @@ import { Card, CardHeader, Button, Input, Select, Modal, ConfirmModal } from '..
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAppStore } from '../store';
 import { maintenanceApi, kmApi, veiculosApi } from '../api';
-import type { Maintenance, MaintenanceType, MaintenanceStatus, Veiculo } from '../types';
+import type { Maintenance, MaintenanceType, MaintenanceStatus, Veiculo, DateFilter } from '../types';
 import { getLocalDatetimeForInput, displayLocaleDatetime } from '../utils/date';
+
+const filterOptions = [
+  { value: 'diario', label: 'Hoje' },
+  { value: 'semanal', label: 'Esta Semana' },
+  { value: 'mensal', label: 'Este Mês' },
+];
 
 const maintenanceTypeOptions = [
   { value: 'oleo', label: 'Troca de Óleo' },
@@ -24,7 +30,7 @@ const statusOptions = [
 ];
 
 export function MaintenancePage() {
-  const { maintenances, addMaintenance, updateMaintenance, deleteMaintenance, setMaintenances, kmRegistries } = useAppStore();
+  const { maintenances, addMaintenance, updateMaintenance, deleteMaintenance, setMaintenances, kmRegistries, dateFilter, setDateFilter } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -86,7 +92,7 @@ export function MaintenancePage() {
     loadMaintenances();
     loadVeiculos();
     loadKm();
-  }, []);
+  }, [dateFilter]);
 
   const loadKm = async () => {
     try {
@@ -113,7 +119,7 @@ export function MaintenancePage() {
   const loadMaintenances = async () => {
     setIsLoading(true);
     try {
-      const response = await maintenanceApi.getAll();
+      const response = await maintenanceApi.getAll(dateFilter);
       if (response.success && response.data) {
         setMaintenances(response.data);
       }
@@ -272,6 +278,12 @@ export function MaintenancePage() {
           </div>
           
           <div className="flex items-center gap-3">
+            <Select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value as DateFilter)}
+              options={filterOptions}
+              className="w-36"
+            />
             {veiculos.length > 0 && (
               <select
                 value={filterVeiculoId}

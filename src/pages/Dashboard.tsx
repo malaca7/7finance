@@ -35,7 +35,7 @@ export function DashboardPage() {
         dashboardApi.getSummary(dateFilter),
         earningsApi.getAll(dateFilter),
         expensesApi.getAll(dateFilter),
-        kmApi.getAll(),
+        kmApi.getAll(dateFilter),
       ]);
 
       if (summaryRes.success && summaryRes.data) {
