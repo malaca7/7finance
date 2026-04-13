@@ -55,10 +55,15 @@ export function LoginPage() {
         login(response.data.user, response.data.token);
         navigate('/dashboard');
       } else {
-        setError(response.error || 'Credenciais inválidas');
+        const errMsg = response.error || '';
+        if (errMsg.toLowerCase().includes('failed to fetch') || errMsg.toLowerCase().includes('network')) {
+          setError('Sem conexão com o servidor. Verifique sua internet e tente novamente.');
+        } else {
+          setError(errMsg || 'Credenciais inválidas');
+        }
       }
     } catch (err) {
-      setError('Erro ao conectar');
+      setError('Sem conexão com o servidor. Verifique sua internet e tente novamente.');
     } finally {
       setIsLoading(false);
     }

@@ -153,6 +153,10 @@ export const authApi = {
       };
     } catch (err: any) {
       console.error('Login exception:', err);
+      const msg = (err.message || '').toLowerCase();
+      if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('network')) {
+        return { success: false, error: 'Sem conexão com o servidor. Verifique sua internet e tente novamente.' };
+      }
       return { success: false, error: err.message || 'Erro no login' };
     }
   },
@@ -223,6 +227,10 @@ export const authApi = {
       };
     } catch (err: any) {
       console.error('Register exception:', err);
+      const msg = (err.message || '').toLowerCase();
+      if (msg.includes('failed to fetch') || msg.includes('network')) {
+        return { success: false, error: 'Sem conexão com o servidor. Verifique sua internet e tente novamente.' };
+      }
       return { success: false, error: err.message || 'Erro no registro' };
     }
   },
