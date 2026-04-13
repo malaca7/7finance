@@ -104,9 +104,13 @@ export const authApi = {
       });
 
       if (authError) {
+        const errMsg = (authError.message || '').toLowerCase();
+        if (errMsg.includes('failed to fetch') || errMsg.includes('network') || errMsg.includes('fetch')) {
+          return { success: false, error: 'Sem conexão com o servidor. Verifique sua internet e tente novamente.' };
+        }
         return {
           success: false,
-          error: authError.message.includes('Invalid')
+          error: authError.message.includes('Invalid') || authError.message.includes('invalid')
             ? 'Telefone ou senha incorretos'
             : authError.message,
         };
@@ -180,10 +184,14 @@ export const authApi = {
       });
 
       if (authError) {
-        if (authError.message.toLowerCase().includes('rate limit')) {
+        const errMsg = (authError.message || '').toLowerCase();
+        if (errMsg.includes('failed to fetch') || errMsg.includes('network') || errMsg.includes('fetch')) {
+          return { success: false, error: 'Sem conexão com o servidor. Verifique sua internet e tente novamente.' };
+        }
+        if (errMsg.includes('rate limit')) {
           return { success: false, error: 'Muitas tentativas de cadastro. Aguarde alguns minutos e tente novamente.' };
         }
-        if (authError.message.toLowerCase().includes('already registered')) {
+        if (errMsg.includes('already registered')) {
           return { success: false, error: 'Este telefone já está cadastrado.' };
         }
         return { success: false, error: authError.message };

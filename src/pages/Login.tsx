@@ -44,7 +44,13 @@ export function LoginPage() {
     setError('');
     
     try {
-      const response = await authApi.login(cleanEmail, password);
+      let response = await authApi.login(cleanEmail, password);
+      
+      // Retry automático se falhar com erro de rede (Supabase Free pode estar "acordando")
+      if (!response.success && response.error?.toLowerCase().includes('sem conexão')) {
+        setError('Conectando ao servidor... Tentando novamente.');
+        response = await authApi.login(cleanEmail, password);
+      }
       
       if (response.success && response.data) {
         if (rememberMe) {
@@ -55,12 +61,7 @@ export function LoginPage() {
         login(response.data.user, response.data.token);
         navigate('/dashboard');
       } else {
-        const errMsg = response.error || '';
-        if (errMsg.toLowerCase().includes('failed to fetch') || errMsg.toLowerCase().includes('network')) {
-          setError('Sem conexão com o servidor. Verifique sua internet e tente novamente.');
-        } else {
-          setError(errMsg || 'Credenciais inválidas');
-        }
+        setError(response.error || 'Credenciais inválidas');
       }
     } catch (err) {
       setError('Sem conexão com o servidor. Verifique sua internet e tente novamente.');
